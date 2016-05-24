@@ -52,7 +52,7 @@ public class SQLAccess {
 		return resultset_to_json(resultSet);
 	} 
 
-	public boolean checkUser (String user)  throws SQLException {
+	private boolean checkUser (String user)  throws SQLException {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select * from USER where ID = " + "'" + user + "'");
 
@@ -62,6 +62,20 @@ public class SQLAccess {
 		return true;		//user exist in DB 
 	} 
 
+	private boolean checkOwner (String user, int COD_M) throws SQLException {
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery("select * " +
+				"from USER u, MONSTER m " +
+				"where u.ID = " + "'" + user + "' " +
+				"and m.COD_M = " + COD_M + " " +
+				"and u.ID = m.ID_OWNER");
+
+		if (!resultSet.next())
+			return false; 	//user isn't the owner of monster COD_M
+
+		return true;		//user is owner of COD_M 
+	} 
+	
 	private boolean checkOwner (String user, String w_name) throws SQLException {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select * " +
@@ -76,21 +90,6 @@ public class SQLAccess {
 		return true;		//user is owner of item w_name
 	} 
 	
-	private boolean checkOwner (String user, int COD_M) throws SQLException {
-		statement = connect.createStatement();
-
-		resultSet = statement.executeQuery("select * " +
-				"from USER u, MONSTER_OWNED m " +
-				"where u.ID = " + "'" + user + "' " +
-				"and m.COD_M = " + COD_M +
-				" and u.ID = m.ID_OWNER");
-
-		if (!resultSet.next())
-			return false; 	//user isn't the owner of monster COD_M
-
-		return true;		//user is owner of COD_M 
-	} 
-	
 	private String findOwner (int COD_M) throws SQLException {		//return ID of the owner
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select ID_OWNER " +
@@ -103,7 +102,46 @@ public class SQLAccess {
 		return resultSet.getString("ID_OWNER");		//user is owner of item w_name
 	} 
 	
+	public int nEquipped (String user, String w_name) throws SQLException {		// ritorna la quantità di oggetti equipaggiati
+		int nEquip;
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery("select W_EQUIPPED " +
+				"from USER u, WEARABLE_OWNED w " +
+				"where u.ID = " + "'" + user + "' " +
+				"and w.W_NAME = " + "'" + w_name + "' " +
+				"and u.ID = w.ID_OWNER");
+
+		if (!resultSet.next())
+			return 0;
+		
+		nEquip= resultSet.getInt("W_EQUIPPED");
+		return nEquip;
+	} 
+	
+	public int nOwned (String user, String w_name) throws SQLException {		// ritorna la quantità di oggetti posseduti
+		int nOwned;
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery("select W_QUANTITY " +
+				"from USER u, WEARABLE_OWNED w " +
+				"where u.ID = " + "'" + user + "' " +
+				"and w.W_NAME = " + "'" + w_name + "' " +
+				"and u.ID = w.ID_OWNER");
+
+		if (!resultSet.next())
+			return 0;
+		
+		nOwned= resultSet.getInt("W_QUANTITY");
+		return nOwned;
+	} 
+	
+	public int nAvailable(String user, String w_name) throws SQLException {		// ritorna la quantità di oggetti posseduti non in uso
+		return nOwned(user, w_name) - nEquipped(user, w_name);		//user is owner of item w_name
+	} 
+	
 	public String insertUser (String user, String pw)  throws SQLException {
+		if (checkUser(user) == true){
+			return "Name already taken \n";			
+		}
 		statement = connect.createStatement();
 		preparedStatement = connect
 				.prepareStatement("insert into USER (ID, PW, LVL, MANA) values (?, ?, 1, 10)");
@@ -135,74 +173,49 @@ public class SQLAccess {
 		return response; 
 	}
 
-
-public String mUnequip (int COD_M, String W_NAME) throws SQLException{ 
-		statement = connect.createStatement();
+	public String mEquip (int COD_M, String w_name) throws SQLException { 
 		String user = findOwner(COD_M);
-	
-		if(checkOwner(user, W_NAME) == false || checkOwner(user, COD_M) == false)
-			return "Error: Equip e mostro appartenenti a differenti user";
+		if (checkOwner(user, w_name) == false){
+			return "Error: item " + w_name + " not found in " + user + " inventory";
+		}
 		
-		executeUpdateRet = statement.executeUpdate("delete from EQUIPPED "
-				+ "where COD_M = " + COD_M 
-				+ " and W_NAME = '" + W_NAME.replace("%20", " ")  + "'");
-	    
-		if (executeUpdateRet == 0)
-			return "Error: wearable not in the wearable equipped";
+		if (nAvailable(user, w_name) < 1){
+			return "Error: Not enought " + w_name + " available";
+		}
 		
-		statement.executeUpdate("UPDATE WEARABLE_OWNED"
-				+ " SET W_EQUIPPED = W_EQUIPPED - 1"
-				+ " where W_NAME = '" + W_NAME.replace("%20", " ") + "'"
-				+ " and ID_OWNER = '" + user + "'");
-		
-		String response = "Equip transfered in WEAREBLE_OWNED";
-
-		return response; 
-	}
-	
-	public String mEquip (int COD_M, String W_NAME) throws SQLException{ 
 		statement = connect.createStatement();	
-		String user = findOwner(COD_M);
-
-		/*Controllo oggetto e mostro appartengono allo stesso user*/
-		if(checkOwner(user, W_NAME) == false || checkOwner(user, COD_M) == false)
-			return "Error: Equip e mostro appartenenti a differenti user";
+		statement.executeUpdate("insert into EQUIPPED (W_NAME, COD_M) values " +
+				"( " + "'" + w_name + "'" + ", " + COD_M + " )");
 		
-		executeUpdateRet = statement.executeUpdate(
-				"insert into EQUIPPED (COD_M, W_NAME, W_TYPE) values( " + COD_M + ", '" + W_NAME.replace("%20", " ") + "','weapon')");
-				  
-		if (executeUpdateRet == 0)
-			return "Error: Cannot Equip";
-		
-		statement.executeUpdate("UPDATE WEARABLE_OWNED"
-				+ " SET W_EQUIPPED = W_EQUIPPED + 1"
-				+ " where W_NAME = '" + W_NAME.replace("%20", " ") + "'"
-				+ " and ID_OWNER = '" + user + "'");
-		
-		String response = "Equipped";
+		int nEquipped = nEquipped(user, w_name) -1;
+		statement.executeUpdate("UPDATE WEARABLE_OWNED " +
+				"SET W_EQUIPPED = " + nEquipped + " " +
+				"where W_NAME = '" + w_name + "' " +
+				"and ID_OWNER = '" + user + "'");
 
-		return response; 
-	}
-	/*public String equip (int COD_M, String W_NAME) throws SQLException { 
-		statement = connect.createStatement();
-		statement.executeUpdate("insert into from EQUIPPED (W_NAME, COD_M) values " +
-				"( " + "'" + W_NAME + "'" + ", " + COD_M);
-
-		String response = "Item " + W_NAME + " has been equipped from monster " + COD_M;
+		String response = "Item " + w_name + " has been equipped from monster " + COD_M;
 		return response; 		
 	}
 
-	public String unequip (int COD_M, String w_name) throws SQLException { 
-
-		statement = connect.createStatement();
+	public String mUnequip (int COD_M, String w_name) throws SQLException { 
+		String user = findOwner(COD_M);
+		if (checkOwner(user, w_name) == false){
+			return "Error: item " + w_name + " not found in " + user + " inventory";
+		}
+		
 		statement.executeUpdate("delete from EQUIPPED " +
-				"where W_NAME = " + "'" + w_name + "'" + 
-				"and COD_M = " + COD_M + ";" +
-				"set ");
-
+				"where COD_M = " + COD_M + " " +
+				"and W_NAME = '" + w_name  + "'");
+		
+		int nEquipped = nEquipped(user, w_name) -1;
+		statement.executeUpdate("UPDATE WEARABLE_OWNED " +
+				"SET W_EQUIPPED = " + nEquipped + " " +
+				"where W_NAME = '" + w_name + "' " +
+				"and ID_OWNER = '" + user + "'");
+		
 		String response = "Item " + w_name + " has been unequipped from monster " + COD_M;
 		return response; 
-	}*/
+	}
 
 	public String mInfo (String denomination) throws SQLException {
 		statement = connect.createStatement();

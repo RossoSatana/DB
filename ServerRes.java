@@ -19,6 +19,7 @@ import db.restlet.ServerRes;
 
 public class ServerRes extends ServerResource {  
 
+	@Get  
 	public String handleConnection() throws SQLException, JSONException {  
 		String response = "";
 		//System.out.println(getClientInfo());
@@ -50,9 +51,7 @@ public class ServerRes extends ServerResource {
 		if (Segm.get(0).equals("Register")){		// http://localhost:8080/Register/ID/PW (Registra l'utente con ID e PW)
 			String user = (String) Segm.get(1);
 			String pw = (String) Segm.get(2);
-			if (db.checkUser(user) == true){
-				return "Name already taken \n";			
-			}
+			
 			if (pw.length() < 3){
 				return "Inserire una password con almeno 3 caratteri";				
 			}
@@ -70,18 +69,18 @@ public class ServerRes extends ServerResource {
 			return db.deleteUser(user);
 		}
 
-		if (Segm.get(0).equals("eqip")){		// http://localhost:8080/insertEquipped/W_NAME/COD_M
+		if (Segm.get(0).equals("mEquip")){		// http://localhost:8080/mEquip/W_NAME/COD_M
 			String W_NAME = ((String) Segm.get(1)).replace("%20", " ");
 			int COD_M = Integer.parseInt((String) Segm.get(2));
 
-			return db.equip(COD_M, W_NAME);
+			return db.mEquip(COD_M, W_NAME);
 		}
 
-		if (Segm.get(0).equals("uneuip")){		// http://localhost:8080/unequip/W_NAME/COD_M
+		if (Segm.get(0).equals("mUnequip")){		// http://localhost:8080/mUnequip/W_NAME/COD_M
 			String w_name = ((String) Segm.get(1)).replace("%20", " ");
 			int COD_M = Integer.parseInt((String) Segm.get(2));
 
-			return db.unequip(COD_M, w_name);
+			return db.mUnequip(COD_M, w_name);
 		}
 
 		if (Segm.get(0).equals("mInfo")){		// http://localhost:8080/mInfo/denomination
@@ -164,6 +163,15 @@ public class ServerRes extends ServerResource {
 			}
 			return response;
 		}
+		
+		if (Segm.get(0).equals("nAvailable")){		// http://localhost:8080/nAvailable/ID/W_NAME
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String w_name = ((String) Segm.get(2)).replace("%20", " ");
+			int disp = db.nAvailable(user, w_name);
+
+			return "You have " +  disp + " object unequipped";
+		}
+		
 
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: http://localhost:8080/User \n";
