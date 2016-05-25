@@ -203,9 +203,11 @@ public class SQLAccess {
 			return "Error: item " + w_name + " not found in " + user + " inventory";
 		}
 		
-		statement.executeUpdate("delete from EQUIPPED " +
+		int rs = statement.executeUpdate("delete from EQUIPPED " +
 				"where COD_M = " + COD_M + " " +
 				"and W_NAME = '" + w_name  + "'");
+		if (rs == 0)
+			return "{\"Error\": \"Item " + w_name + " is not equipped\"}";
 		
 		int nEquipped = nEquipped(user, w_name) -1;
 		statement.executeUpdate("UPDATE WEARABLE_OWNED " +
@@ -244,7 +246,7 @@ public class SQLAccess {
 	public String mFighting (String user) throws SQLException { 
 
 		if (checkUser(user) == false) {
-			return "{Error : User not found}";
+			return "{\"Error\": \"User not found\"}";
 		}
 
 		statement = connect.createStatement();
