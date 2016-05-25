@@ -361,12 +361,7 @@ public class SQLAccess {
 	
 	public String joinMatchMaking (String user) throws SQLException{
 		statement = connect.createStatement();
-		int lvl;
-		resultSet = statement.executeQuery("select * " +
-				"from USER " +
-				"where ID = '" + user + "'");
-		resultSet.next();
-		lvl = resultSet.getInt("LVL");
+		int lvl = lvlAvg(user);
 		
 		statement.executeUpdate("insert into MATCHMAKING " +
 				"(ID, LVL) values " +
@@ -380,14 +375,14 @@ public class SQLAccess {
 				"where ID = '" + user + "'" );
 		return "You are no longer in queque";
 	}
-	public String learnAbility(String A_NAME, int COD_M) throws SQLException{
+	public String learnAbility(String a_name, int COD_M) throws SQLException{
 		statement = connect.createStatement();
 	
 		
 		statement.executeUpdate(""
-				+ "insert into MONSTER_ABILITY (A_NAME, COD_M) values ('" + A_NAME + "', " + COD_M + ")");
+				+ "insert into MONSTER_ABILITY (A_NAME, COD_M) values ('" + a_name + "', " + COD_M + ")");
 		
-		String response = "Monster:" + COD_M + " learned ability:" + A_NAME;
+		String response = "Monster:" + COD_M + " learned ability:" + a_name;
 		return response;
 	}
 	
@@ -395,7 +390,7 @@ public class SQLAccess {
 		statement = connect.createStatement();
 		String user = findOwner(COD_M);
 
-		executeUpdateRet = statement.executeUpdate(""
+		statement.executeUpdate(""
 				+ "insert into TEAM (ID_USER, COD_M) values('" + user + "'," + COD_M + ")");
 		
 		String response = "Mostro COD_M:" + COD_M + " inserito nel team";
@@ -406,23 +401,54 @@ public class SQLAccess {
 	public String mRemoveTeam (int COD_M) throws SQLException { 
 		statement = connect.createStatement();
 		
-		executeUpdateRet = statement.executeUpdate("delete from TEAM where COD_M = "  + COD_M );
-		System.out.println(executeUpdateRet);
+		int up = statement.executeUpdate("delete from TEAM where COD_M = "  + COD_M );
 		
-		if(executeUpdateRet  == 0)
+		if(up == 0)
 			return "Mostro non presente nel team";
 		
 		String response = "Mostro COD_M:" + COD_M + " tolto dal team";
 		return response; 
 	}
 	
-		public String lvlAvg(String user) throws SQLException{
+	public boolean checkExp (int COD_M) throws SQLException { 	// controlla se è il momento di fare il lvlUp
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+		 		"select EXP, LVL " +
+				"from MONSTER_OWNED " +
+				"where COD_M = " + COD_M);
+		resultSet.next();
+		
+		if (resultSet.getInt("EXP") >= resultSet.getInt("LVL")*100){
+			return true;		// true -> se è il momento di fare il lvlUp
+		}
+		
+		return false; 		// false -> se non è il momento di fare il lvlUp
+	}
+	
+	public String lvlUp (int COD_M) throws SQLException { 
+		statement = connect.createStatement();
+		
+		resultSet = statement.executeQuery(
+		 		"select LVL, EXP " +
+				"from MONSTER_OWNED " +
+				"where COD_M = " + COD_M);
+		resultSet.next();
+		int lvl = resultSet.getInt("LVL") + 1;
+		int exp = resultSet.getInt("EXP") - lvl*100;
+		statement.executeUpdate("UPDATE MONSTER_OWNED " +
+				"SET LVL = " + lvl + ", " + 
+				"EXP = " + exp + " " +
+				"where COD_M = " + COD_M);
+		return "LvlUp!"; 
+	}
+	
+	public int lvlAvg(String user) throws SQLException{
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select AVG(LVL) from MONSTER_OWNED mo, TEAM t where t.COD_M = mo.COD_M  and mo.ID_OWNER = '" + user +"'" );
 		if (!resultSet.next())
-			return null; 	//user hasn't monster in team
+			return 0; 	//user hasn't monster in team
 		
-		return resultSet.getString("AVG(LVL)");
+		return resultSet.getInt("AVG(LVL)");
 	}
 	
 } 

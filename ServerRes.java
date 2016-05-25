@@ -202,20 +202,33 @@ public class ServerRes extends ServerResource {
 			return db.exitMatchMaking(user);
 		}
 
-		if (Segm.get(0).equals("learnAbility")){
+		if (Segm.get(0).equals("learnAbility")){		// http://localhost:8080/learnAbility/COD_M/A_NAME
 			int COD_M = Integer.parseInt((String) Segm.get(1));
-			String A_NAME = ((String) Segm.get(2)).replace("%20", " ");
-			return db.learnAbility(A_NAME, COD_M);
+			String a_name = ((String) Segm.get(2)).replace("%20", " ");
+			return db.learnAbility(a_name, COD_M);
 		}
-		if (Segm.get(0).equals("mAddTeam")){
+		if (Segm.get(0).equals("mAddTeam")){			// http://localhost:8080/mAddTeam/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			return db.mAddTeam(COD_M);
 		}
 		
-		if (Segm.get(0).equals("mRemoveTeam")){
+		if (Segm.get(0).equals("mRemoveTeam")){			// http://localhost:8080/mRemoveTeam/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			return db.mRemoveTeam(COD_M);
 		}
+		
+		if (Segm.get(0).equals("lvlUp")){			// http://localhost:8080/lvlUp/COD_M
+			int COD_M = Integer.parseInt((String) Segm.get(1));
+			if (db.checkExp(COD_M) == false)
+				return "Not enought exp for lvlup";
+			return db.lvlUp(COD_M);
+		}
+		
+		if (Segm.get(0).equals("lvlAvg")){		// http://localhost:8080/lvlAvg/ID
+			String user = ((String) Segm.get(1)).replace("%20", " ");	
+			return Integer.toString(db.lvlAvg(user));
+		}
+		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: http://localhost:8080/User \n";
 		response += "Login: http://localhost:8080/Login/ID/PW \n";
