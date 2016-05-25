@@ -140,7 +140,7 @@ public class SQLAccess {
 	
 	public String insertUser (String user, String pw)  throws SQLException {
 		if (checkUser(user) == true){
-			return "Name already taken \n";			
+			return "{\"Error\" : \"Name already taken\" }";			
 		}
 		statement = connect.createStatement();
 		preparedStatement = connect
@@ -158,7 +158,7 @@ public class SQLAccess {
 		resultSet = statement.executeQuery("select * from USER where ID = " + "'" + user + "'" + " and PW = " + "'" + pw + "'");
 
 		if (!resultSet.next())
-			return "Login error: username or password mismatched \n"; 
+			return "{\"Error\" : \"Login error: username or password mismatched\" }"; 
 
 		String response = "You are now logged in as: " + user;
 		return response; 
@@ -176,11 +176,11 @@ public class SQLAccess {
 	public String mEquip (int COD_M, String w_name) throws SQLException { 
 		String user = findOwner(COD_M);
 		if (checkOwner(user, w_name) == false){
-			return "Error: item " + w_name + " not found in " + user + " inventory";
+			return "{\"Error\" : \"Error: item " + w_name + " not found in " + user + " inventory\" }";
 		}
 		
 		if (nAvailable(user, w_name) < 1){
-			return "Error: Not enought " + w_name + " available";
+			return "{\"Error\" : \"Error: Not enought " + w_name + " available\" }";
 		}
 		
 		statement = connect.createStatement();	
@@ -200,7 +200,7 @@ public class SQLAccess {
 	public String mUnequip (int COD_M, String w_name) throws SQLException { 
 		String user = findOwner(COD_M);
 		if (checkOwner(user, w_name) == false){
-			return "Error: item " + w_name + " not found in " + user + " inventory";
+			return "{\"Error\" : \"Error: item " + w_name + " not found in " + user + " inventory\" }";
 		}
 		
 		int rs = statement.executeUpdate("delete from EQUIPPED " +
