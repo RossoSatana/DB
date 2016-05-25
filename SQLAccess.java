@@ -447,13 +447,13 @@ public class SQLAccess {
 		return "LvlUp!"; 
 	}
 	
-	public String lvlAvg(String user) throws SQLException{
+	public int lvlAvg(String user) throws SQLException{
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select AVG(LVL) from MONSTER_OWNED mo, TEAM t where t.COD_M = mo.COD_M  and mo.ID_OWNER = '" + user +"'" );
 		if (!resultSet.next())
-			return null; 	//user hasn't monster in team
+			return 0; 	//user hasn't monster in team
 		
-		return resultSet.getString("AVG(LVL)");
+		return resultSet.getInt("AVG(LVL)");
 	}
 	
 } 

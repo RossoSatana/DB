@@ -226,7 +226,7 @@ public class ServerRes extends ServerResource {
 		
 		if (Segm.get(0).equals("lvlAvg")){		// http://localhost:8080/lvlAvg/ID
 			String user = ((String) Segm.get(1)).replace("%20", " ");
-			return db.lvlAvg(user);
+			return Integer.toString(db.lvlAvg(user));
 		}
 		
 		response = "Operazioni possibili: \n";
