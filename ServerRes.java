@@ -202,6 +202,20 @@ public class ServerRes extends ServerResource {
 			return db.exitMatchMaking(user);
 		}
 
+		if (Segm.get(0).equals("learnAbility")){
+			int COD_M = Integer.parseInt((String) Segm.get(1));
+			String A_NAME = ((String) Segm.get(2)).replace("%20", " ");
+			return db.learnAbility(A_NAME, COD_M);
+		}
+		if (Segm.get(0).equals("mAddTeam")){
+			int COD_M = Integer.parseInt((String) Segm.get(1));
+			return db.mAddTeam(COD_M);
+		}
+		
+		if (Segm.get(0).equals("mRemoveTeam")){
+			int COD_M = Integer.parseInt((String) Segm.get(1));
+			return db.mRemoveTeam(COD_M);
+		}
 		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: http://localhost:8080/User \n";
