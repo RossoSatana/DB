@@ -229,6 +229,31 @@ public class ServerRes extends ServerResource {
 			return Integer.toString(db.lvlAvg(user));
 		}
 		
+		if(Segm.get(0).equals("attack")){		// http://localhost:8080/attck/COD_M/COD_MA									//localhost:8080/attack/COD_M/COD_MA
+			String action = ((String) Segm.get(0)).replace("%20", " ");
+			int COD_M = Integer.parseInt((String) Segm.get(1));
+			int COD_MA = Integer.parseInt((String) Segm.get(2));
+			response = db.aAttack(COD_M, COD_MA) + db.mAction(COD_M, action) ;;
+			return response;
+		}
+		
+		if(Segm.get(0).equals("move")){			// http://localhost:8080/move/COD_M/pos									//localhost:8080/move/COD_M/pos
+			String action = ((String) Segm.get(0)).replace("%20", " ");
+			int COD_M = Integer.parseInt((String) Segm.get(1));
+			int pos = Integer.parseInt((String) Segm.get(2));
+			response = db.aMove(COD_M, pos) + db.mAction(COD_M, action) ;
+			return response;
+		}
+		
+		if(Segm.get(0).equals("ability")){		// http://localhost:8080/ability/COD_M/COD_MA/a_name						//localhost:8080/ability/COD_M/COD_MA/a_name 
+			String action = ((String) Segm.get(0)).replace("%20", " ");
+			int COD_M = Integer.parseInt((String) Segm.get(1));		
+			int COD_MA = Integer.parseInt((String) Segm.get(2));
+			String ability = ((String) Segm.get(3)).replace("%20", " ");
+			response =  db.aAbility(COD_M, COD_MA, ability) + db.mAction(COD_M, action);
+			return response;
+		}
+		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: http://localhost:8080/User \n";
 		response += "Login: http://localhost:8080/Login/ID/PW \n";
