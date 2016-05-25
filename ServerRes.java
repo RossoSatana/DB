@@ -172,7 +172,37 @@ public class ServerRes extends ServerResource {
 			return "You have " +  disp + " object unequipped";
 		}
 		
+		if (Segm.get(0).equals("sCollection")){		// http://localhost:8080/nAvailable/ID/W_NAME
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			return db.sCollection(user);
+		}
+		
+		if (Segm.get(0).equals("wCollection")){		// http://localhost:8080/nAvailable/ID/W_NAME
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			return db.wCollection(user);
+		}
+		
+		if (Segm.get(0).equals("wCollectionType")){		// http://localhost:8080/wCollectionType/ID/W_TYPE
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String type = ((String) Segm.get(2)).replace("%20", " ");
+			return db.wCollectionType(user, type);
+		}
+		
+		if (Segm.get(0).equals("matchMaking")){			// http://localhost:8080/matchMaking
+			return db.matchMaking();
+		}
+		
+		if (Segm.get(0).equals("joinMatchMaking")){		// http://localhost:8080/joinMatchMaking/ID
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			return db.joinMatchMaking(user);
+		}
+		
+		if (Segm.get(0).equals("exitMatchMaking")){		// http://localhost:8080/exitMatchMaking/ID
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			return db.exitMatchMaking(user);
+		}
 
+		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: http://localhost:8080/User \n";
 		response += "Login: http://localhost:8080/Login/ID/PW \n";

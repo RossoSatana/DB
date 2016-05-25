@@ -302,5 +302,81 @@ public class SQLAccess {
 
   		return response; 
   	}
+	
+	public String sCollection (String user) throws SQLException { 
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+	 		"select * " +
+			"from SUPPLIES_OWNED " +
+			"where ID_OWNER = '" + user + "' ");
+	
+		String response;
+		response = resultset_to_json (resultSet);
 
+  		return response; 
+  	}
+	
+	public String wCollection (String user) throws SQLException { 
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+	 		"select * " +
+			"from WEARABLE_OWNED " +
+			"where ID_OWNER = '" + user + "'");
+	
+		String response;
+		response = resultset_to_json (resultSet);
+
+  		return response; 
+  	}
+	
+	public String wCollectionType (String user, String type) throws SQLException { 
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+	 		"select * " +
+			"from WEARABLE_OWNED wo, WEARABLE w " +
+			"where  wo.ID_OWNER = '" + user + "' " +
+			"and wo.W_NAME = w.W_NAME " +
+			"and w.W_TYPE = '" + type + "'");
+	
+		String response;
+		response = resultset_to_json (resultSet);
+
+  		return response; 
+  	}	
+	
+	public String matchMaking () throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+	 		"select * " +
+			"from MATCHMAKING " +
+			"order by PRIORITY");
+	
+		String response;
+		response = resultset_to_json (resultSet);
+
+  		return response; 
+	}
+	
+	public String joinMatchMaking (String user) throws SQLException{
+		statement = connect.createStatement();
+		int lvl;
+		resultSet = statement.executeQuery("select * " +
+				"from USER " +
+				"where ID = '" + user + "'");
+		resultSet.next();
+		lvl = resultSet.getInt("LVL");
+		
+		statement.executeUpdate("insert into MATCHMAKING " +
+				"(ID, LVL) values " +
+				"( '" + user + "', " + lvl + " )" );
+		return "You are now in queque: waiting for a foe...";
+	}
+	
+	public String exitMatchMaking (String user) throws SQLException{
+		statement = connect.createStatement();		
+		statement.executeUpdate("delete from MATCHMAKING " +
+				"where ID = '" + user + "'" );
+		return "You are no longer in queque";
+	}
+	
 } 
