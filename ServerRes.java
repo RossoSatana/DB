@@ -216,6 +216,14 @@ public class ServerRes extends ServerResource {
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			return db.mRemoveTeam(COD_M);
 		}
+		
+		if (Segm.get(0).equals("lvlAvg")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			
+			response = Integer.toString(db.lvlAvg(user));
+
+			return response;
+		}
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: http://localhost:8080/User \n";
 		response += "Login: http://localhost:8080/Login/ID/PW \n";
