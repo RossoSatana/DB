@@ -308,7 +308,7 @@ public class SQLAccess {
 		statement.executeUpdate(""
 				+ "insert into MONSTER_ABILITY (A_NAME, COD_M) values ('" + A_NAME + "', " + COD_M + ")");
 		
-		String response = "Ability " + A_NAME +  "learned";
+		String response = "Monster:" + COD_M + " learned ability:" + A_NAME;
 		return response;
 	}
 
