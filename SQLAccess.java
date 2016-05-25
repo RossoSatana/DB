@@ -380,5 +380,40 @@ public class SQLAccess {
 				"where ID = '" + user + "'" );
 		return "You are no longer in queque";
 	}
+	public String learnAbility(String A_NAME, int COD_M) throws SQLException{
+		statement = connect.createStatement();
+	
+		
+		statement.executeUpdate(""
+				+ "insert into MONSTER_ABILITY (A_NAME, COD_M) values ('" + A_NAME + "', " + COD_M + ")");
+		
+		String response = "Monster:" + COD_M + " learned ability:" + A_NAME;
+		return response;
+	}
+	
+	public String mAddTeam (int COD_M) throws SQLException { 
+		statement = connect.createStatement();
+		String user = findOwner(COD_M);
+
+		executeUpdateRet = statement.executeUpdate(""
+				+ "insert into TEAM (ID_USER, COD_M) values('" + user + "'," + COD_M + ")");
+		
+		String response = "Mostro COD_M:" + COD_M + " inserito nel team";
+		return response; 
+	}
+
+
+	public String mRemoveTeam (int COD_M) throws SQLException { 
+		statement = connect.createStatement();
+		
+		executeUpdateRet = statement.executeUpdate("delete from TEAM where COD_M = "  + COD_M );
+		System.out.println(executeUpdateRet);
+		
+		if(executeUpdateRet  == 0)
+			return "Mostro non presente nel team";
+		
+		String response = "Mostro COD_M:" + COD_M + " tolto dal team";
+		return response; 
+	}
 	
 } 
