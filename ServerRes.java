@@ -53,7 +53,7 @@ public class ServerRes extends ServerResource {
 			String pw = (String) Segm.get(2);
 			
 			if (pw.length() < 3){
-				return "Inserire una password con almeno 3 caratteri";				
+				return "{\"Error\": \"Inserire una password con almeno 3 caratteri\"}";				
 			}
 			return db.insertUser(user, pw);
 		}
