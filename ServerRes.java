@@ -7,6 +7,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.restlet.Server;
 import org.restlet.data.Protocol;
@@ -18,13 +20,13 @@ import db.restlet.ServerRes;
 
 
 public class ServerRes extends ServerResource {  
-
+	SQLAccess db = new SQLAccess();			//Apro connessione a DB	
+	
 	@Get  
 	public String handleConnection() throws SQLException, JSONException {  
 		String response = "";
 		//System.out.println(getClientInfo());
 
-		SQLAccess db = new SQLAccess();			//Apro connessione a DB
 		try {
 			db.connection();
 		} catch (Exception e) {
@@ -123,7 +125,6 @@ public class ServerRes extends ServerResource {
 			}
 			return response;
 		}
-
 
 		if (Segm.get(0).equals("mAbility")){		// http://localhost:8080/mAbility/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));
@@ -229,7 +230,7 @@ public class ServerRes extends ServerResource {
 			return Integer.toString(db.lvlAvg(user));
 		}
 		
-		if(Segm.get(0).equals("attack")){		// http://localhost:8080/attck/COD_M/COD_MA									//localhost:8080/attack/COD_M/COD_MA
+		if(Segm.get(0).equals("aAttack")){		// http://localhost:8080/aAttack/COD_M/COD_MA									//localhost:8080/attack/COD_M/COD_MA
 			String action = ((String) Segm.get(0)).replace("%20", " ");
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			int COD_MA = Integer.parseInt((String) Segm.get(2));
@@ -237,7 +238,7 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
-		if(Segm.get(0).equals("move")){			// http://localhost:8080/move/COD_M/pos									//localhost:8080/move/COD_M/pos
+		if(Segm.get(0).equals("aMove")){			// http://localhost:8080/aMove/COD_M/pos									//localhost:8080/move/COD_M/pos
 			String action = ((String) Segm.get(0)).replace("%20", " ");
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			int pos = Integer.parseInt((String) Segm.get(2));
@@ -245,13 +246,41 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
-		if(Segm.get(0).equals("ability")){		// http://localhost:8080/ability/COD_M/COD_MA/a_name						//localhost:8080/ability/COD_M/COD_MA/a_name 
+		if(Segm.get(0).equals("aAbility")){		// http://localhost:8080/aAbility/COD_M/COD_MA/a_name						//localhost:8080/ability/COD_M/COD_MA/a_name 
 			String action = ((String) Segm.get(0)).replace("%20", " ");
 			int COD_M = Integer.parseInt((String) Segm.get(1));		
 			int COD_MA = Integer.parseInt((String) Segm.get(2));
 			String ability = ((String) Segm.get(3)).replace("%20", " ");
 			response =  db.aAbility(COD_M, COD_MA, ability) + db.mAction(COD_M, action);
 			return response;
+		}
+		
+		if (Segm.get(0).equals("searchMatch")){		// http://localhost:8080/searchMatch/ID
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			if (db.searchMatch(user) == true){
+				db.exitMatchMaking(user);	//user deleted from the queue of matchmaking
+				return "Match found! Your foe is: " + db.findFoe(user);
+			}
+			return "Still searching for a foe";
+		}
+		
+		if(Segm.get(0).equals("createGame")){	// http://localhost:8080/createGame/ID1/ID2
+			String id1 = ((String) Segm.get(1)).replace("%20", " ");
+			String id2 = ((String) Segm.get(2)).replace("%20", " ");
+			return db.createGame(id1, id2);
+		}
+				
+		if(Segm.get(0).equals("clearGames")){	// http://localhost:8080/clearGames
+			return db.clearGames();
+		}
+		
+		if(Segm.get(0).equals("clearqueue")){	// http://localhost:8080/clearGames
+			return db.clearQueue();
+		}
+				
+		if(Segm.get(0).equals("startMatching")){	// http://localhost:8080/startMatching
+			matching();
+			return "end matching";
 		}
 		
 		response = "Operazioni possibili: \n";
@@ -261,8 +290,44 @@ public class ServerRes extends ServerResource {
 
 		return response;
 	}
+	
+	private int loadQueue (List <User> queue) throws SQLException, JSONException{
+		String jusers = db.matchMaking();
+		JSONArray jarr;
+		JSONObject jobj;
+		jarr = new JSONArray(jusers);
+		int i, j;
+		
+		for (i=0; i<jarr.length(); i++){
+			jobj = jarr.getJSONObject(i);
+			queue.add(new User (jobj.getString("ID"), jobj.getInt("LVL")));
+		}
+		return i;
+	}
+	
+	public void matching () throws SQLException, JSONException{
+		List <User> queue = new ArrayList <User> ();
+		int i, j;
+		
+		for (i=0; loadQueue(queue) >= 2 && i<queue.size(); ){			
+			for (j=0; j<queue.size(); j++){
+				if (i==j) j++; 
+				System.out.println("ID1 lvv: " +  queue.get(i).lvl + " ID2 lvv: " +  queue.get(j).lvl);
+				if (queue.get(i).lvl-3 <= queue.get(j).lvl && queue.get(i).lvl+3 >= queue.get(j).lvl){
+					db.createGame(queue.get(i).id, queue.get(j).id);
 
-
+					db.exitMatchMaking(queue.get(i).id);
+					db.exitMatchMaking(queue.get(j).id);
+					queue.clear();
+					break;
+				}
+			}
+			if (j == queue.size())
+				i++;
+		}
+		System.out.println("Not enought player in queue");
+	}
+	
 	public static void main(String[] args) throws Exception {  
 		new Server(Protocol.HTTP, 8080, ServerRes.class).start();  
 	}
