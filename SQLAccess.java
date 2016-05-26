@@ -102,6 +102,86 @@ public class SQLAccess {
 		return resultSet.getString("ID_OWNER");		//user is owner of item w_name
 	} 
 	
+	public String findFoe (String user)  throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery("select * " +
+				"from GAME " +
+				"where ID1 = '" + user +"' " +
+				"or ID2 = '" + user +"'" );
+		resultSet.next();
+		String ID1 = resultSet.getString("ID1");
+		String ID2 = resultSet.getString("ID2");
+		if (ID1.equals(user))
+			return ID2;
+		return ID1;
+	}
+	
+	public String aAbility(int COD_M,  int COD_MA, String ability) throws SQLException{
+		statement = connect.createStatement();
+
+		/*Inserisce nella tabella A_ABILITY l'abilità castata*/
+		statement.executeUpdate(""
+				+ "insert into A_ABILITY(COD_M,COD_MA, A_NAME)"
+				+ " values (" + COD_M + "," + COD_MA + ", '" + ability + "')");
+
+		String response = " Monster:" + COD_M + " attacked monster:" + COD_MA + " with ability:" + ability;
+		return response;
+	}
+
+	private int findPosition(int COD_M) throws SQLException{
+		statement = connect.createStatement();
+
+		/*Estraggo dal database la pos del mostro cod_m*/
+		resultSet = statement.executeQuery("select POS"
+				+ " from MONSTER_FIGHTING"
+				+ " where COD_M =" + COD_M);
+
+		if (!resultSet.next())
+			return -1; 	/*mostro non presente nel team*/
+
+		int pos = resultSet.getInt("POS");
+		return pos;
+	}
+	
+	private int mSwitch(int COD_M, int COD_MA) throws SQLException{ 			/*PRIVATE*/
+		statement = connect.createStatement();
+		/*registro posizioni di entrambi i mostri*/
+		int pos1 = findPosition(COD_M);
+		int pos2 = findPosition(COD_MA);
+
+		/*Switch delle posizioni nel database evitando di 2 posizioni uguali in monster fighting*/
+		statement.executeUpdate("UPDATE MONSTER_FIGHTING" 
+				+ " SET POS = -1"
+				+ " where COD_M = " + COD_MA );
+		statement.executeUpdate("UPDATE MONSTER_FIGHTING"
+				+ " SET POS = " + pos2
+				+ " where COD_M = " + COD_M );
+		statement.executeUpdate("UPDATE MONSTER_FIGHTING"
+				+ " SET POS = " + pos1
+				+ " where COD_M = " + COD_MA );
+
+		/*non so cosa metterici come return*/
+		return 0;
+	}
+
+	private int findCod(int POS, String user) throws SQLException{
+		statement = connect.createStatement();
+		/*Estraggo dal database il cod_m del mostro nella posizione 'pos' appartenente all' utente 'user'*/
+		/*migliorabile*/
+		resultSet = statement.executeQuery(""
+				+ "select mo.COD_M"
+				+ " from MONSTER_FIGHTING mf, MONSTER_OWNED mo"
+				+ " where POS = " + POS + " "
+				+ "and mo.ID_OWNER = '" + user +"'"
+				+ " and mf.COD_M = mo.COD_M");
+
+		if (!resultSet.next())
+			return -1; 			/*nessun mostro in quella posizione*/	
+
+		int COD_MA = resultSet.getInt("COD_M");
+		return COD_MA;
+	}
+	
 	public int nEquipped (String user, String w_name) throws SQLException {		// ritorna la quantità di oggetti equipaggiati
 		int nEquip;
 		statement = connect.createStatement();
@@ -366,14 +446,14 @@ public class SQLAccess {
 		statement.executeUpdate("insert into MATCHMAKING " +
 				"(ID, LVL) values " +
 				"( '" + user + "', " + lvl + " )" );
-		return "You are now in queque: waiting for a foe...";
+		return "You are now in queue: waiting for a foe...";
 	}
 	
 	public String exitMatchMaking (String user) throws SQLException{
 		statement = connect.createStatement();		
 		statement.executeUpdate("delete from MATCHMAKING " +
 				"where ID = '" + user + "'" );
-		return "You are no longer in queque";
+		return "You are no longer in queue";
 	}
 	public String learnAbility(String a_name, int COD_M) throws SQLException{
 		statement = connect.createStatement();
@@ -493,75 +573,46 @@ public class SQLAccess {
 		String response = " Monster:" + COD_M + " switched position with monster:" + COD_MA;
 		return response;
 	}
-	
 
-	public String aAbility(int COD_M,  int COD_MA, String ability) throws SQLException{
+	public boolean searchMatch (String user)  throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery("select * " +
+				"from GAME " +
+				"where ID1 = '" + user +"' " +
+				"or ID1 = '" + user +"' ");
+		if (!resultSet.next())
+			return false; 	//user hasn't a match yet
+		return true;
+	}
+	
+	public String clearGames() throws SQLException{
 		statement = connect.createStatement();
 
-		/*Inserisce nella tabella A_ABILITY l'abilità castata*/
-		statement.executeUpdate(""
-				+ "insert into A_ABILITY(COD_M,COD_MA, A_NAME)"
-				+ " values (" + COD_M + "," + COD_MA + ", '" + ability + "')");
-
-		String response = " Monster:" + COD_M + " attacked monster:" + COD_MA + " with ability:" + ability;
+		statement.executeUpdate("truncate GAME");
+		
+		String response = "Games cleared";
 		return response;
 	}
 	
-
-	private int findPosition(int COD_M) throws SQLException{
+	public String clearQueue() throws SQLException{
 		statement = connect.createStatement();
 
-		/*Estraggo dal database la pos del mostro cod_m*/
-		resultSet = statement.executeQuery("select POS"
-				+ " from MONSTER_FIGHTING"
-				+ " where COD_M =" + COD_M);
-
-		if (!resultSet.next())
-			return -1; 	/*mostro non presente nel team*/
-
-		int pos = resultSet.getInt("POS");
-		return pos;
+		statement.executeUpdate("truncate MATCHMAKING");
+		
+		String response = "Queue cleared";
+		return response;
 	}
 	
-
-	private int mSwitch(int COD_M, int COD_MA) throws SQLException{ 			/*PRIVATE*/
+	public String createGame (String id1, String id2) throws SQLException { 
 		statement = connect.createStatement();
-		/*registro posizioni di entrambi i mostri*/
-		int pos1 = findPosition(COD_M);
-		int pos2 = findPosition(COD_MA);
-
-		/*Switch delle posizioni nel database evitando di 2 posizioni uguali in monster fighting*/
-		statement.executeUpdate("UPDATE MONSTER_FIGHTING" 
-				+ " SET POS = -1"
-				+ " where COD_M = " + COD_MA );
-		statement.executeUpdate("UPDATE MONSTER_FIGHTING"
-				+ " SET POS = " + pos2
-				+ " where COD_M = " + COD_M );
-		statement.executeUpdate("UPDATE MONSTER_FIGHTING"
-				+ " SET POS = " + pos1
-				+ " where COD_M = " + COD_MA );
-
-		/*non so cosa metterici come return*/
-		return 0;
-	}
-	
-
-	private int findCod(int POS, String user) throws SQLException{
-		statement = connect.createStatement();
-		/*Estraggo dal database il cod_m del mostro nella posizione 'pos' appartenente all' utente 'user'*/
-		/*migliorabile*/
-		resultSet = statement.executeQuery(""
-				+ "select mo.COD_M"
-				+ " from MONSTER_FIGHTING mf, MONSTER_OWNED mo"
-				+ " where POS = " + POS + " "
-				+ "and mo.ID_OWNER = '" + user +"'"
-				+ " and mf.COD_M = mo.COD_M");
-
-		if (!resultSet.next())
-			return -1; 			/*nessun mostro in quella posizione*/	
-
-		int COD_MA = resultSet.getInt("COD_M");
-		return COD_MA;
+		
+		int up = statement.executeUpdate("insert into GAME (ID1, ID2) values ( '"  + id1 + "', '" + id2 + "' )");
+		
+		if(up == 0)
+			return "Inserimento non riuscito";
+		
+		String response = "Game started: " + id1 + " vs. " + id2;
+		return response; 
 	}
 	
 } 
