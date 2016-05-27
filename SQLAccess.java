@@ -13,6 +13,7 @@ import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
 public class SQLAccess {
 	protected Connection connect = null;
@@ -25,10 +26,9 @@ public class SQLAccess {
 			Class.forName("com.mysql.jdbc.Driver");
 
 			connect = DriverManager
-					.getConnection("jdbc:mysql://localhost:3306/DBTESI?characterEncoding=UTF-8&useSSL=false",
-							"root", "moonlight3");
-					/*.getConnection("jdbc:mysql://localhost:3306/dbtesi?characterEncoding=UTF-8&useSSL=false",
-												"root", "root"); */
+					.getConnection(""
+							+ "jdbc:mysql://localhost:3306/dbtesi?characterEncoding=UTF-8&useSSL=false&user=fillo&password=root");
+					
 		} catch (Exception e) {
 			throw e;
 		}
@@ -497,7 +497,9 @@ public class SQLAccess {
 	public String mAddTeam (int COD_M) throws SQLException { 
 		statement = connect.createStatement();
 		String user = findOwner(COD_M);
-
+		
+		if(!checkTeamSize(findOwner(COD_M)))
+			return "Nel team sono gia presenti 9 mostri";
 		statement.executeUpdate(""
 				+ "insert into TEAM (ID_USER, COD_M) values('" + user + "'," + COD_M + ")");
 		
@@ -615,7 +617,7 @@ public class SQLAccess {
 		resultSet = statement.executeQuery("select * " +
 				"from GAME " +
 				"where ID1 = '" + user +"' " +
-				"or ID1 = '" + user +"' ");
+				"or ID2 = '" + user +"' ");
 		if (!resultSet.next())
 			return false; 	//user hasn't a match yet
 		return true;
@@ -738,6 +740,88 @@ public class SQLAccess {
 
 		return resultSet.getString("CLASS");		//user is owner of COD_M 
 	}
+
 	
 	
+	
+	public String clearActionQueue(String user) throws SQLException{
+		statement = connect.createStatement();
+
+		//Cancella tutte le monster_action riguardnti un certo user
+		statement.executeUpdate("delete from MONSTER_ACTION where COD_M in ( select COD_M from TEAM where ID_USER = '" + user + "')");
+		
+		//Cancella tutte le a_attack riguardnti un certo user
+		statement.executeUpdate("delete from A_ATTACK where COD_M in ( select COD_M from TEAM where ID_USER = '" + user + "')");
+		
+		//Cancella tutte le a_ability riguardnti un certo user
+		statement.executeUpdate("delete from A_ABILITY where COD_M in ( select COD_M from TEAM where ID_USER = '" + user + "')");
+	
+		//Cancella tutte le a_move riguardnti un certo user
+		statement.executeUpdate("delete from A_MOVE where COD_M in ( select COD_M from TEAM where ID_USER = '" + user + "')");
+	
+		String response = "ActionQueue cleared";
+		return response;
+	}
+	
+	private boolean checkTeamSize(String user) throws SQLException{
+		statement = connect.createStatement();
+		
+		//Ritorna il numero di mostri in team appartenenti a user
+		resultSet = statement.executeQuery(""
+				+ "select COUNT(*)"
+				+ " from TEAM"
+				+ " where ID_USER = '" + user + "'");
+		
+		//se nessun mostro in team
+		if (!resultSet.next())
+			return true; 	 
+		//se mostri in team minore di 9
+		else if(resultSet.getInt("COUNT(*)") < 9)
+			return true;
+		
+			else
+				return false;  //mostri in team = 9
+	}
+	
+	public boolean addToFighting(int COD_M, int pos) throws SQLException, JSONException{
+		//Controlla che la posizione non sia gia occupata
+		if(findCod(pos, findOwner(COD_M)) != -1)
+			return false;
+		
+		statement = connect.createStatement();
+		//Estraggo dall'array di JSON l'unico oggetto inserito
+		JSONArray jarr = new JSONArray(showMonsterStat(COD_M));
+		JSONObject monsterStat = jarr.getJSONObject(0);
+		//Inserisce in moster fighting il mostro COD_M nella posizione POS
+		statement.executeUpdate(""
+				+ "insert into MONSTER_FIGHTING (COD_M, POS, HP, AD, AP ,DEF ,MDEF)"
+				+ " values (" + COD_M
+				+ ", " + pos 
+				+ ", " + monsterStat.getInt("HP") 
+				+ ", " + monsterStat.getInt("AD") 
+				+ ", " + monsterStat.getInt("AP") 
+				+ ", " + monsterStat.getInt("DEF") 
+				+ ", " + monsterStat.getInt("MDEF") + ")");
+	
+		return true; //inserimento riuscito
+	}
+	
+	public String showMonsterStat(int COD_M) throws SQLException{		//Restituisce statistiche riguardanti un mostro in combattimento
+		statement = connect.createStatement();
+		//ritorna tabella statistiche posizione del mostro COD_M
+		resultSet = statement.executeQuery(""
+			+ "select m.HP+c.HP*mo.LVL as HP,"
+			+ " m.AD+c.AD*mo.LVL as AD,"
+			+ " m.AP+c.AP*mo.LVL as AP,"
+			+ " m.DEF+c.DEF*mo.LVL as DEF,"
+			+ " m.MDEF+c.MDEF*mo.LVL as MDEF"
+			+ " from MONSTER m, CLASSES c, MONSTER_OWNED mo"
+			+ " where m.class = c.class"
+			+ " and mo.denomination = m.denomination"
+			+ " and mo.COD_M = " + COD_M );
+	//Trasforma in stringa JSON
+	String response= resultset_to_json (resultSet);	
+	return response;
+	
+	}
 } 
