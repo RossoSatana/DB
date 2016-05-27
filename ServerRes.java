@@ -261,23 +261,44 @@ public class ServerRes extends ServerResource {
 			return "Still searching for a foe";
 		}
 		
-		if(Segm.get(0).equals("createGame")){	// http://localhost:8080/createGame/ID1/ID2
+		if(Segm.get(0).equals("createGame")){				// http://localhost:8080/createGame/ID1/ID2
 			String id1 = ((String) Segm.get(1)).replace("%20", " ");
 			String id2 = ((String) Segm.get(2)).replace("%20", " ");
 			return db.createGame(id1, id2);
 		}
 				
-		if(Segm.get(0).equals("clearGames")){	// http://localhost:8080/clearGames
+		if(Segm.get(0).equals("clearGames")){				// http://localhost:8080/clearGames
 			return db.clearGames();
 		}
 		
-		if(Segm.get(0).equals("clearqueue")){	// http://localhost:8080/clearGames
+		if(Segm.get(0).equals("clearqueue")){				// http://localhost:8080/clearGames
 			return db.clearQueue();
 		}
 				
 		if(Segm.get(0).equals("startMatching")){	// http://localhost:8080/startMatching
 			matching();
 			return "end matching";
+		}
+		
+		if(Segm.get(0).equals("clearActionQueue")){	// http://localhost:8080/clearActionQueue/user
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			db.clearActionQueue(user);
+			return "Action queue cleared";
+		}
+		
+		if(Segm.get(0).equals("addToFighting")){	// http://localhost:8080/addToFighting/COD_M/pos
+			int COD_M = Integer.parseInt((String) Segm.get(1));		
+			int POS = Integer.parseInt((String) Segm.get(2));
+			if(db.addToFighting(COD_M, POS))
+				return "Monster added to fighting";
+			return "Monster position already taken";
+		}
+		
+		if(Segm.get(0).equals("ShowMonsterStat")){	// http://localhost:8080/ShowMonsterStat/COD_M
+			int COD_M = Integer.parseInt((String) Segm.get(1));		
+			response = db.showMonsterStat(COD_M);
+				
+			return response;
 		}
 		
 		response = "Operazioni possibili: \n";
@@ -289,17 +310,18 @@ public class ServerRes extends ServerResource {
 	}
 	
 	private int loadQueue (List <User> queue) throws SQLException, JSONException{
-		String jusers = db.matchMaking();
+		String jusers = db.matchMaking();   //restituisce stringa in JSON contenente tutti gli utenti nella coda matchmaking
 		JSONArray jarr;
 		JSONObject jobj;
 		jarr = new JSONArray(jusers);
 		int i, j;
 		
+		//popola la lista queue di elementi raffiguranti gli utenti nel matchmaking
 		for (i=0; i<jarr.length(); i++){
 			jobj = jarr.getJSONObject(i);
 			queue.add(new User (jobj.getString("ID"), jobj.getInt("LVL")));
 		}
-		return i;
+		return i;   //ritorna grandezza dell'array
 	}
 	
 	public void matching () throws SQLException, JSONException{
@@ -308,18 +330,24 @@ public class ServerRes extends ServerResource {
 		
 		for (i=0; loadQueue(queue) >= 2 && i<queue.size(); ){			
 			for (j=0; j<queue.size(); j++){
-				if (i==j) j++; 
-				System.out.println("ID1 lvv: " +  queue.get(i).lvl + " ID2 lvv: " +  queue.get(j).lvl);
+				if (i==j) j++; //Se gli utenti sono uguali allora salta l'iterazione
+				
+				System.out.println("ID1 lvl: " +  queue.get(i).lvl + " ID2 lvl: " +  queue.get(j).lvl);
 				if (queue.get(i).lvl-3 <= queue.get(j).lvl && queue.get(i).lvl+3 >= queue.get(j).lvl){
+					
+					//Aggiunge una row nella tabella GAME con i due ID trovati
 					db.createGame(queue.get(i).id, queue.get(j).id);
-
+					
+					//Cancella i due utenti dalla tabella matchmaking
 					db.exitMatchMaking(queue.get(i).id);
 					db.exitMatchMaking(queue.get(j).id);
+					
+					//Cancella la lista
 					queue.clear();
 					break;
 				}
 			}
-			if (j == queue.size())
+			if (j == queue.size())    //Controllare se serve 
 				i++;
 		}
 		System.out.println("Not enought player in queue");
