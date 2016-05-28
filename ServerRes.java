@@ -1,6 +1,8 @@
 package db.restlet;
 
 import db.restlet.*;
+
+import java.io.IOException;
 import java.sql.SQLException;
 
 import org.json.JSONArray;
@@ -10,6 +12,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 import org.restlet.Server;
 import org.restlet.data.Protocol;
 import org.restlet.resource.Get;
@@ -18,10 +21,9 @@ import org.restlet.resource.ServerResource;
 import db.restlet.SQLAccess;
 import db.restlet.ServerRes;
 
-
 public class ServerRes extends ServerResource {  
 	SQLAccess db = new SQLAccess();			//Apro connessione a DB	
-	
+
 	@Get  
 	public String handleConnection() throws SQLException, JSONException {  
 		String response = "";
@@ -36,7 +38,7 @@ public class ServerRes extends ServerResource {
 		List Segm = getReference().getSegments();	
 		JSONArray jarr;
 		JSONObject jobj;
-		
+
 		if (Segm.get(0).equals("User")) {		// http://localhost:8080/User (Visualizza tutti gli utenti registrati)
 			response = db.allUser();
 
@@ -53,7 +55,7 @@ public class ServerRes extends ServerResource {
 		if (Segm.get(0).equals("Register")){		// http://localhost:8080/Register/ID/PW (Registra l'utente con ID e PW)
 			String user = (String) Segm.get(1);
 			String pw = (String) Segm.get(2);
-			
+
 			if (pw.length() < 3){
 				return "{\"Error\": \"Inserire una password con almeno 3 caratteri\"}";				
 			}
@@ -102,7 +104,7 @@ public class ServerRes extends ServerResource {
 		if (Segm.get(0).equals("moInfo")){		// http://localhost:8080/moInfo/COD_M
 
 			int COD_M = Integer.parseInt((String) Segm.get(1));			
-			response = db.mInfo(COD_M);
+			response = db.moInfo(COD_M);
 
 			jarr = new JSONArray(response);
 
@@ -110,6 +112,14 @@ public class ServerRes extends ServerResource {
 				jobj = jarr.getJSONObject(i);
 				System.out.println("Monster: " + jobj.get("NAME"));
 			}
+			return response;
+		}
+
+		if (Segm.get(0).equals("mfInfo")){		// http://localhost:8080/moInfo/COD_M
+
+			int COD_M = Integer.parseInt((String) Segm.get(1));			
+			response = db.mfInfo(COD_M);
+			
 			return response;
 		}
 
@@ -151,7 +161,7 @@ public class ServerRes extends ServerResource {
 			}
 			return response;
 		}
-		
+
 		if (Segm.get(0).equals("mCollection")){		// http://localhost:8080/mCollection/ID
 			String user = (String) Segm.get(1);
 			response = db.mCollection(user);
@@ -164,7 +174,7 @@ public class ServerRes extends ServerResource {
 			}
 			return response;
 		}
-		
+
 		if (Segm.get(0).equals("nAvailable")){		// http://localhost:8080/nAvailable/ID/W_NAME
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			String w_name = ((String) Segm.get(2)).replace("%20", " ");
@@ -172,32 +182,32 @@ public class ServerRes extends ServerResource {
 
 			return "You have " +  disp + " object unequipped";
 		}
-		
-		if (Segm.get(0).equals("sCollection")){		// http://localhost:8080/nAvailable/ID/W_NAME
+
+		if (Segm.get(0).equals("sCollection")){		// http://localhost:8080/sCollection/ID/W_NAME
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			return db.sCollection(user);
 		}
-		
-		if (Segm.get(0).equals("wCollection")){		// http://localhost:8080/nAvailable/ID/W_NAME
+
+		if (Segm.get(0).equals("wCollection")){		// http://localhost:8080/wCollection/ID/W_NAME
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			return db.wCollection(user);
 		}
-		
+
 		if (Segm.get(0).equals("wCollectionType")){		// http://localhost:8080/wCollectionType/ID/W_TYPE
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			String type = ((String) Segm.get(2)).replace("%20", " ");
 			return db.wCollectionType(user, type);
 		}
-		
+
 		if (Segm.get(0).equals("matchMaking")){			// http://localhost:8080/matchMaking
 			return db.matchMaking();
 		}
-		
+
 		if (Segm.get(0).equals("joinMatchMaking")){		// http://localhost:8080/joinMatchMaking/ID
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			return db.joinMatchMaking(user);
 		}
-		
+
 		if (Segm.get(0).equals("exitMatchMaking")){		// http://localhost:8080/exitMatchMaking/ID
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			return db.exitMatchMaking(user);
@@ -212,38 +222,38 @@ public class ServerRes extends ServerResource {
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			return db.mAddTeam(COD_M);
 		}
-		
+
 		if (Segm.get(0).equals("mRemoveTeam")){			// http://localhost:8080/mRemoveTeam/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			return db.mRemoveTeam(COD_M);
 		}
-		
+
 		if (Segm.get(0).equals("lvlUp")){			// http://localhost:8080/lvlUp/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			if (db.checkExp(COD_M) == false)
 				return "Not enought exp for lvlup";
 			return db.lvlUp(COD_M);
 		}
-		
+
 		if (Segm.get(0).equals("lvlAvg")){		// http://localhost:8080/lvlAvg/ID
 			String user = ((String) Segm.get(1)).replace("%20", " ");	
 			return Integer.toString(db.lvlAvg(user));
 		}
-		
+
 		if(Segm.get(0).equals("aAttack")){				// http://localhost:8080/aAttack/COD_M/COD_M						//localhost:8080/attack/COD_M/COD_MA
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			int COD_MA = Integer.parseInt((String) Segm.get(2));
 			response = db.aAttack(COD_M, COD_MA);
 			return response;
 		}
-		
+
 		if(Segm.get(0).equals("aMove")){				// http://localhost:8080/aMove/COD_M/pos								//localhost:8080/move/COD_M/pos
 			int COD_M = Integer.parseInt((String) Segm.get(1));
 			int pos = Integer.parseInt((String) Segm.get(2));
 			response = db.aMove(COD_M, pos);
 			return response;
 		}
-		
+
 		if(Segm.get(0).equals("aAbility")){				// http://localhost:8080/aAbility/COD_M/COD_MA/a_name								//localhost:8080/ability/COD_M/COD_MA/a_name 
 			int COD_M = Integer.parseInt((String) Segm.get(1));		
 			int COD_MA = Integer.parseInt((String) Segm.get(2));
@@ -251,7 +261,7 @@ public class ServerRes extends ServerResource {
 			response =  db.aAbility(COD_M, COD_MA, ability);
 			return response;
 		}
-		
+
 		if (Segm.get(0).equals("searchMatch")){		// http://localhost:8080/searchMatch/ID
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			if (db.searchMatch(user) == true){
@@ -260,73 +270,112 @@ public class ServerRes extends ServerResource {
 			}
 			return "Still searching for a foe";
 		}
-		
+
 		if(Segm.get(0).equals("createGame")){	// http://localhost:8080/createGame/ID1/ID2
 			String id1 = ((String) Segm.get(1)).replace("%20", " ");
 			String id2 = ((String) Segm.get(2)).replace("%20", " ");
 			return db.createGame(id1, id2);
 		}
-				
+
 		if(Segm.get(0).equals("clearGames")){	// http://localhost:8080/clearGames
 			return db.clearGames();
 		}
-		
-		if(Segm.get(0).equals("clearqueue")){	// http://localhost:8080/clearGames
+
+		if(Segm.get(0).equals("clearQueue")){	// http://localhost:8080/clearQueue
 			return db.clearQueue();
 		}
-				
-		if(Segm.get(0).equals("startMatching")){	// http://localhost:8080/startMatching
+
+		/*	if(Segm.get(0).equals("startMatching")){	// http://localhost:8080/startMatching
 			matching();
 			return "end matching";
+		}*/
+
+		if(Segm.get(0).equals("clearActionQueue")){	// http://localhost:8080/clearActionQueue/user
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			db.clearActionQueue(user);
+			return "Action queue cleared";
+		}
+
+		if(Segm.get(0).equals("addToFighting")){	// http://localhost:8080/addToFighting/COD_M/pos
+			int COD_M = Integer.parseInt((String) Segm.get(1));		
+			int POS = Integer.parseInt((String) Segm.get(2));
+			if(db.addToFighting(COD_M, POS))
+				return "Monster added to fighting";
+			return "Monster position already taken";
+		}
+
+		if(Segm.get(0).equals("showMonsterStat")){	// http://localhost:8080/ShowMonsterStat/COD_M
+			int COD_M = Integer.parseInt((String) Segm.get(1));		
+			response = db.showMonsterStat(COD_M);
+			return response;
 		}
 		
-		response = "Operazioni possibili: \n";
-		response += "Utenti esistenti: http://localhost:8080/User \n";
-		response += "Login: http://localhost:8080/Login/ID/PW \n";
-		response += "Register: http://localhost:8080/Register/ID/PW \n";
+		if(Segm.get(0).equals("showMonsterStatWithBonus")){	// http://localhost:8080/showMonsterStatWithBonus/COD_M
+			int COD_M = Integer.parseInt((String) Segm.get(1));		
+			response = db.showMonsterStatWithBonus(COD_M);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("attackEffect")){	// http://localhost:8080/attackEffect/COD_A/COD_T
+			int COD_A = Integer.parseInt((String) Segm.get(1));	
+			int COD_T = Integer.parseInt((String) Segm.get(2));	
+			response = db.attackEffect(COD_A, COD_T);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("mWInfo")){	// http://localhost:8080/mWInfo/COD_M
+			int COD_M = Integer.parseInt((String) Segm.get(1));	
+			response = db.mWInfo(COD_M);
+			return response;
+		}
 
+		response = "Operazioni possibili: \n";
+		response += "Utenti esistenti: 			http://localhost:8080/User \n";
+		response += "Login: 					http://localhost:8080/Login/ID/PW \n";
+		response += "Register: 				http://localhost:8080/Register/ID/PW \n";
+		response += "Elimina utente:		 		http://localhost:8080/deleteUser/ID \n";
+		response += "Equipaggia: 				http://localhost:8080/mEquip/W_NAME/COD_M \n";
+		response += "Disequipaggia:				http://localhost:8080/mUnequip/W_NAME/COD_M \n";
+		response += "mInfo: 					http://localhost:8080/mInfo/denomination \n";
+		response += "moInfo:					http://localhost:8080/moInfo/COD_M \n";
+		response += "mfInfo:					http://localhost:8080/mfInfo/COD_M \n";
+		response += "mFighting:				http://localhost:8080/mFighting/ID \n";
+		response += "mAbility:				http://localhost:8080/mAbility/COD_M \n";
+		response += "mEquipped:				http://localhost:8080/mEquipped/COD_M \n";
+		response += "mCollection:				http://localhost:8080/mCollection/ID \n";
+		response += "nAvailable: 				http://localhost:8080/nAvailable/ID/W_NAME \n";	
+		response += "Supplies collection:			http://localhost:8080/sCollection/ID/W_NAME \n";	
+		response += "Wearable collection: 			http://localhost:8080/wCollection/ID/W_NAME \n";	
+		response += "Wearable byType:			http://localhost:8080/wCollectionType/ID/W_TYPE \n";	
+		response += "Players in queue:			http://localhost:8080/matchMaking \n";	
+		response += "joinMatchMaking:			http://localhost:8080/joinMatchMaking/ID \n";	
+		response += "exitMatchMaking:			http://localhost:8080/exitMatchMaking/ID \n";	
+		response += "learnAbility:				http://localhost:8080/learnAbility/COD_M/A_NAME \n";	
+		response += "mAddTeam:				http://localhost:8080/mAddTeam/COD_M \n";	
+		response += "mRemoveTeam:				http://localhost:8080/mRemoveTeam/COD_M \n";	
+		response += "lvlUp:					http://localhost:8080/lvlUp/COD_M \n";
+		response += "lvlAvg:					http://localhost:8080/lvlAvg/ID \n";
+		response += "aAttack:				http://localhost:8080/aAttack/COD_M/COD_M \n";
+		response += "aMove:					http://localhost:8080/aMove/COD_M/po \n";
+		response += "aAbility:				http://localhost:8080/aAbility/COD_M/COD_MA/a_name \n";
+		response += "searchMatch:				http://localhost:8080/searchMatch/ID \n";
+		response += "Create Game:				http://localhost:8080/createGame/ID1/ID2 \n";
+		response += "Clear Games:				http://localhost:8080/clearGames \n";
+		response += "Clear Queue:				http://localhost:8080/clearQueue \n";
+		response += "Clear ActionQueue:			http://localhost:8080/clearActionQueue/user \n";
+		response += "addToFighting:				http://localhost:8080/addToFighting/COD_M/pos \n";
+		response += "showMonsterStat:			http://localhost:8080/ShowMonsterStat/COD_M \n";
+		response += "attackEffect:				http://localhost:8080/attackEffect/COD_A/COD_T \n";
+		response += "mWInfo:					http://localhost:8080/mWInfo/COD_M \n";
+		response += "showMonsterStatWithBonus:	http://localhost:8080/showMonsterStatWithBonus/COD_M \n";
+		response += " \n";
+		
 		return response;
 	}
-	
-	private int loadQueue (List <User> queue) throws SQLException, JSONException{
-		String jusers = db.matchMaking();
-		JSONArray jarr;
-		JSONObject jobj;
-		jarr = new JSONArray(jusers);
-		int i, j;
-		
-		for (i=0; i<jarr.length(); i++){
-			jobj = jarr.getJSONObject(i);
-			queue.add(new User (jobj.getString("ID"), jobj.getInt("LVL")));
-		}
-		return i;
-	}
-	
-	public void matching () throws SQLException, JSONException{
-		List <User> queue = new ArrayList <User> ();
-		int i, j;
-		
-		for (i=0; loadQueue(queue) >= 2 && i<queue.size(); ){			
-			for (j=0; j<queue.size(); j++){
-				if (i==j) j++; 
-				System.out.println("ID1 lvv: " +  queue.get(i).lvl + " ID2 lvv: " +  queue.get(j).lvl);
-				if (queue.get(i).lvl-3 <= queue.get(j).lvl && queue.get(i).lvl+3 >= queue.get(j).lvl){
-					db.createGame(queue.get(i).id, queue.get(j).id);
 
-					db.exitMatchMaking(queue.get(i).id);
-					db.exitMatchMaking(queue.get(j).id);
-					queue.clear();
-					break;
-				}
-			}
-			if (j == queue.size())
-				i++;
-		}
-		System.out.println("Not enought player in queue");
-	}
-	
 	public static void main(String[] args) throws Exception {  
-		new Server(Protocol.HTTP, 8080, ServerRes.class).start();  
+		new Server(Protocol.HTTP, 8080, ServerRes.class).start();
+		new Matching();
 	}
 
 }  
