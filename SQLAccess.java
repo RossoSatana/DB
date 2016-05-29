@@ -24,11 +24,13 @@ public class SQLAccess {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 
-			connect = DriverManager
-					.getConnection("jdbc:mysql://localhost:3306/DBTESI?characterEncoding=UTF-8&useSSL=false",
-							"root", "moonlight3");
-			/*.getConnection("jdbc:mysql://localhost:3306/dbtesi?characterEncoding=UTF-8&useSSL=false",
-												"root", "root"); */
+			connect = DriverManager	.getConnection(""
+					+ "jdbc:mysql://localhost:3306/dbtesi?characterEncoding=UTF-8&useSSL=false&user=fillo&password=root"); 
+
+
+
+			/*.getConnection("jdbc:mysql://localhost:3306/DBTESI?characterEncoding=UTF-8&useSSL=false",
+					"root", "moonlight3");*/
 		} catch (Exception e) {
 			throw e;
 		}
@@ -310,7 +312,7 @@ public class SQLAccess {
 
 		return resultSet.getString("CLASS");		//user is owner of COD_M 
 	}
-	
+
 	public int nEquipped (String user, String w_name) throws SQLException {		// ritorna la quantità di oggetti equipaggiati
 		int nEquip;
 		statement = connect.createStatement();
@@ -396,7 +398,7 @@ public class SQLAccess {
 		statement.executeUpdate("insert into EQUIPPED (W_NAME, COD_M) values " +
 				"( " + "'" + w_name + "'" + ", " + COD_M + " )");
 
-		int nEquipped = nEquipped(user, w_name) -1;
+		int nEquipped = nEquipped(user, w_name) +1;
 		statement.executeUpdate("UPDATE WEARABLE_OWNED " +
 				"SET W_EQUIPPED = " + nEquipped + " " +
 				"where W_NAME = '" + w_name + "' " +
@@ -451,7 +453,7 @@ public class SQLAccess {
 		response = resultset_to_json (resultSet);
 		return response;
 	}
-	
+
 	public String mfInfo (int COD_M)	throws SQLException {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery(
@@ -473,20 +475,20 @@ public class SQLAccess {
 		response = resultset_to_json (resultSet);
 		return response;
 	}
-	
+
 	public String mWInfo (int COD_M) throws SQLException {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery(
 				"select * " +
 						"from EQUIPPED e, WEARABLE w " +
 						"where e.COD_M = " + COD_M + " " +
-						"and w.W_NAME = e.W_NAME");
-		
+				"and w.W_NAME = e.W_NAME");
+
 		String response;
 		response = resultset_to_json (resultSet);
 		return response;
 	}
-	
+
 	public String mFighting (String user) throws SQLException { 
 
 		if (checkUser(user) == false) {
@@ -831,7 +833,7 @@ public class SQLAccess {
 		//Controlla che la posizione non sia gia occupata
 		if(findCod(pos, findOwner(COD_M)) != -1)
 			return false;		
-		
+
 		statement = connect.createStatement();
 		//Estraggo dall'array di JSON l'unico oggetto inserito
 		JSONArray jarr = new JSONArray(showMonsterStatWithBonus(COD_M));
@@ -867,40 +869,33 @@ public class SQLAccess {
 		String response= resultset_to_json (resultSet);	
 		return response;
 	}
-	
+
 	public String showMonsterStatWithBonus(int COD_M) throws SQLException, JSONException{		//Restituisce statistiche riguardanti un mostro in combattimento
 		JSONArray jstat = new JSONArray(showMonsterStat(COD_M));		
 		JSONObject stat = jstat.getJSONObject(0);						//statistiche base
-		int HP = stat.getInt("HP");
-		int AD = stat.getInt("AD");
-		int AP = stat.getInt("AP");
-		int DEF = stat.getInt("DEF");
-		int MDEF = stat.getInt("MDEF");
-		
-		JSONArray wj = new JSONArray(mWInfo(COD_M));		//info equipaggiamento mostro
-		JSONObject wearable;
+		JSONArray wj = new JSONArray(mWInfo(COD_M));		
+		JSONObject wearable;															//info equipaggiamento mostro
 
-		for (int i=0; i<wj.length(); i++){		//damage dovuto a oggetti
+		for (int i=0; i<wj.length(); i++){		//aggiungie alle stat base le stat dovute agli oggetti
 			wearable = wj.getJSONObject(i);
-			HP += wearable.getInt("W_HP");
-			AD += wearable.getInt("W_AD");
-			AP += wearable.getInt("W_AP");
-			DEF += wearable.getInt("W_DEF");
-			MDEF += wearable.getInt("W_MDEF");
+			stat.put("HP", stat.getInt("HP") + wearable.getInt("W_HP"));
+			stat.put("AD", stat.getInt("AD") + wearable.getInt("W_AD"));
+			stat.put("AP", stat.getInt("AP") + wearable.getInt("W_AP"));
+			stat.put("DEF", stat.getInt("DEF") + wearable.getInt("W_DEF"));
+			stat.put("MDEF", stat.getInt("MDEF") + wearable.getInt("W_MDEF"));
 		}
-		
-		return "[{\"HP\":\"" + HP + "\",\"AD\":\"" + AD + "\",\"AP\":\"" + AP + "\",\"DEF\":\"" + DEF + "\",\"MDEF\":\"" + MDEF + "\"}]";
+		return stat.toString();
 	}
-	
+
 	public String attackEffect(int COD_A, int COD_T) throws SQLException, JSONException{		//COD_A -> COD_M attaccante & COD_T -> COD_M difensore
 		JSONArray aj = new JSONArray(mfInfo(COD_A));
 		JSONObject aStat = aj.getJSONObject(0);		//statistiche attaccante
-		
+
 		JSONArray tj = new JSONArray(mfInfo(COD_T));
 		JSONObject tStat = tj.getJSONObject(0);		//statistiche target
-		
+
 		int attkD = aStat.getInt("AD");			//ad damage, attacco fisico base
-		
+
 		int defD = tStat.getInt("DEF");			//difesa fisica
 
 		int D = attkD - defD;
@@ -909,7 +904,7 @@ public class SQLAccess {
 		int totDamage = D;
 		if (tStat.getInt("HP") < totDamage)
 			totDamage = tStat.getInt("HP");
-		
+
 		statement = connect.createStatement();
 		statement.executeUpdate(""
 				+ "update MONSTER_FIGHTING "
@@ -920,10 +915,117 @@ public class SQLAccess {
 
 	public String abilityEffect(int COD_A, int COD_T, String a_name) throws SQLException{		//COD_A -> COD_M attaccante & COD_T -> COD_M difensore
 		statement = connect.createStatement();
-		
 		resultSet = statement.executeQuery("");
 		String response= resultset_to_json (resultSet);	
 		return response;
 	}
 
+	
+	public String buy(String denomination, String user, String name) throws SQLException{		
+		int monsterValue = findMonsterValue(denomination);
+		if(findUserMana(user) - monsterValue < 0)			//Controllo che il mana sia sufficiente
+			return "Not enought mana";
+
+		changeMana(-monsterValue,user);							//Acquisto avvenuto sottraggo il mana all'user
+		statement = connect.createStatement();
+		int up =statement.executeUpdate(""						//Aggiungo il mostro tra i moster owned di user
+				+ "insert into MONSTER_OWNED (DENOMINATION, NAME,  ID_OWNER)"
+				+ " values ('"+denomination+"', '" + name + "', '" + user +"')");
+		if(up != 1)
+			return "Error in buyMonster";
+
+		return "Monster in user: " + user + " inventory";
+	}
+
+	public String buy(String w_name, String user) throws SQLException{		
+		int wearableValue = findWearableValue(w_name);
+		if(findUserMana(user) - wearableValue < 0)			//Controllo che il mana sia sufficiente
+			return "Not enought mana";
+
+		changeMana(-wearableValue,user);						//Acquisto avvenuto sottraggo il mana all'user
+		statement = connect.createStatement();
+
+		if(checkOwner(user, w_name) == false){				//Se l'user non possiede ancora l'oggetto a_name
+			int up =statement.executeUpdate(""					//Inserisco l'oggetto nell'inventario
+					+ "insert into WEARABLE_OWNED (W_NAME,  ID_OWNER)"
+					+ " values ('"+ w_name +"', '" + user +"')");
+			if(up != 1)
+				return "Error in buyWearable";
+			return "Wearable added in user: " + user + " inventory";
+		}
+		else{																			//Se l'user possiede l'oggetto a_name
+			int up =statement.executeUpdate(""
+					+ "update WEARABLE_OWNED"				//incremento il quantity in wearable owned di user
+					+ " set W_QUANTITY = W_QUANTITY + 1"
+					+ " where W_NAME = '" + w_name + "'");
+			if(up != 1)
+				return "Error in buyWearable";		
+			return "Wearable added in user: " + user + " inventory";
+		}
+	}
+
+	public int findUserMana( String user) throws SQLException{		
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""					
+				+ "select MANA"
+				+ " from USER"
+				+ " where ID = '" + user + "'");
+		
+		if (!resultSet.next())
+			return -1; 	//user hasn't a match yet
+
+		return resultSet.getInt("MANA");		
+	}
+
+	public int findMonsterValue( String denomination) throws SQLException{		
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select VALUE"
+				+ " from MONSTER_STORE"
+				+ " where DENOMINATION = '" + denomination + "'");
+		
+		if (!resultSet.next())
+			return -1; 	//monster hasn't a match yet
+
+		return resultSet.getInt("VALUE");		
+	}
+
+	public int findWearableValue( String w_name) throws SQLException{		
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select VALUE"
+				+ " from WEARABLE_STORE"
+				+ " where W_NAME = '" + w_name + "'");
+		
+		if (!resultSet.next())
+			return -1; 	//user wearable hasn't match yet
+
+		return resultSet.getInt("VALUE");		
+	}
+
+	public int changeMana(int MANA, String user) throws SQLException{		
+		statement = connect.createStatement();
+		return statement.executeUpdate(""
+				+ "update user"
+				+ " set MANA = MANA + " + MANA  
+				+ " where ID = '" + user + "'" );	
+	}
+	
+	public String showMonsterStore() throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select *"
+				+ " from MONSTER_STORE ms, MONSTER m"
+				+ " where m.DENOMINATION = ms.DENOMINATION");
+		return resultset_to_json(resultSet);
+	}
+
+	public String showWearableStore() throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select * "
+				+ "from WEARABLE_STORE ws, WEARABLE w"
+				+ " where w.W_NAME = ws.W_NAME");
+		return resultset_to_json(resultSet);
+	}
 } 

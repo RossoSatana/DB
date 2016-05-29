@@ -119,7 +119,7 @@ public class ServerRes extends ServerResource {
 
 			int COD_M = Integer.parseInt((String) Segm.get(1));			
 			response = db.mfInfo(COD_M);
-			
+
 			return response;
 		}
 
@@ -309,24 +309,47 @@ public class ServerRes extends ServerResource {
 			response = db.showMonsterStat(COD_M);
 			return response;
 		}
-		
+
 		if(Segm.get(0).equals("showMonsterStatWithBonus")){	// http://localhost:8080/showMonsterStatWithBonus/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));		
 			response = db.showMonsterStatWithBonus(COD_M);
 			return response;
 		}
-		
+
 		if(Segm.get(0).equals("attackEffect")){	// http://localhost:8080/attackEffect/COD_A/COD_T
 			int COD_A = Integer.parseInt((String) Segm.get(1));	
 			int COD_T = Integer.parseInt((String) Segm.get(2));	
 			response = db.attackEffect(COD_A, COD_T);
 			return response;
 		}
-		
+
 		if(Segm.get(0).equals("mWInfo")){	// http://localhost:8080/mWInfo/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));	
 			response = db.mWInfo(COD_M);
 			return response;
+		}
+
+
+		if(Segm.get(0).equals("buyMonster")){	// http://localhost:8080/buyMonster/user/denomination/name
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String denomination = ((String) Segm.get(2)).replace("%20", " ");
+			String name = ((String) Segm.get(3)).replace("%20", " ");	
+			response = db.buy(denomination, user, name);
+			return response;
+		}
+
+		if(Segm.get(0).equals("buyWearable")){	// http://localhost:8080/buyWearable/user/w_name
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String w_name = ((String) Segm.get(2)).replace("%20", " ");	
+			response = db.buy( w_name, user);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("showMonsterStore")){	// http://localhost:8080/showMonsterStore
+			return db.showMonsterStore();
+		}
+		if(Segm.get(0).equals("showWearableStore")){	// http://localhost:8080/showMonsterStore
+			return db.showWearableStore();
 		}
 
 		response = "Operazioni possibili: \n";
@@ -369,13 +392,13 @@ public class ServerRes extends ServerResource {
 		response += "mWInfo:					http://localhost:8080/mWInfo/COD_M \n";
 		response += "showMonsterStatWithBonus:	http://localhost:8080/showMonsterStatWithBonus/COD_M \n";
 		response += " \n";
-		
+
 		return response;
 	}
 
 	public static void main(String[] args) throws Exception {  
 		new Server(Protocol.HTTP, 8080, ServerRes.class).start();
-		new Matching();
+		/*new Matching();*/
 	}
 
 }  
