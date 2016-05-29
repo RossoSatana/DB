@@ -328,6 +328,29 @@ public class ServerRes extends ServerResource {
 			response = db.mWInfo(COD_M);
 			return response;
 		}
+		
+		if(Segm.get(0).equals("buyMonster")){	// http://localhost:8080/buyMonster/user/denomination/name
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String denomination = ((String) Segm.get(2)).replace("%20", " ");
+			String name = ((String) Segm.get(3)).replace("%20", " ");	
+			response = db.buy(denomination, user, name);
+			return response;
+		}
+
+		if(Segm.get(0).equals("buyWearable")){	// http://localhost:8080/buyWearable/user/w_name
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String w_name = ((String) Segm.get(2)).replace("%20", " ");	
+			response = db.buy( w_name, user);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("showMonsterStore")){	// http://localhost:8080/showMonsterStore
+			return db.showMonsterStore();
+		}
+		
+		if(Segm.get(0).equals("showWearableStore")){	// http://localhost:8080/showMonsterStore
+			return db.showWearableStore();
+		}
 
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
@@ -368,6 +391,10 @@ public class ServerRes extends ServerResource {
 		response += "attackEffect:				http://localhost:8080/attackEffect/COD_A/COD_T \n";
 		response += "mWInfo:					http://localhost:8080/mWInfo/COD_M \n";
 		response += "showMonsterStatWithBonus:	http://localhost:8080/showMonsterStatWithBonus/COD_M \n";
+		response += "Buy Monster:				http://localhost:8080/buyMonster/user/denomination/name \n";
+		response += "Buy Wearable:				http://localhost:8080/buyWearable/user/w_name \n";
+		response += "Show Monster Store:		http://localhost:8080/showMonsterStore \n";
+		response += "Show Monster Store:		http://localhost:8080/showMonsterStore \n";
 		response += " \n";
 		
 		return response;
