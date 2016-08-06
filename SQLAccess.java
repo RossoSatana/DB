@@ -561,8 +561,12 @@ public class SQLAccess {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery(
 				"select * " +
+						"from MONSTER_OWNED mo " +
+						"where  mo.ID_OWNER = '" + user + "'" +
+						"and mo.COD_M in " +
+						"(select t.COD_M " +
 						"from TEAM t " +
-						"where  t.ID_USER = '" + user + "'");
+						"where t.ID_USER = '" + user + "')");
 
 		String response;
 		response = resultset_to_json (resultSet);
