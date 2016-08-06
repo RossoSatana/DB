@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ public class SQLAccess {
 		}
 	}
 
-	private String toJArr(ResultSet rs) throws SQLException {
+	private String resultset_to_json(ResultSet rs) throws SQLException {
 		JSONArray jarr = new JSONArray();
 		while (rs.next()){
 			HashMap<String, String> row = new HashMap<String, String>();
@@ -43,17 +44,6 @@ public class SQLAccess {
 			jarr.put(new JSONObject(row));
 		}
 		return jarr.toString();
-	}
-	
-	private String toJObj(ResultSet rs) throws SQLException {
-			if(!rs.next())
-				return "Error";
-			
-			HashMap<String, String> row = new HashMap<String, String>();
-			for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) 
-				row.put(rs.getMetaData().getColumnName(i), String.valueOf(rs.getObject(i)));
-			
-			return new JSONObject(row).toString();
 	}
 	
 	private String error_to_json(String error) throws SQLException, JSONException {	
@@ -67,7 +57,7 @@ public class SQLAccess {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select * from USER");
 
-		return toJArr(resultSet);
+		return resultset_to_json(resultSet);
 	} 
 
 	private boolean checkUser (String user)  throws SQLException {
@@ -371,7 +361,7 @@ public class SQLAccess {
 		}
 		statement = connect.createStatement();
 		preparedStatement = connect
-				.prepareStatement("insert into USER (ID, PW, LVL, MANA) values (?, ?, 1, 10)");
+				.prepareStatement("insert into USER (ID, PW, MANA) values (?, ?, 10)");
 
 		preparedStatement.setString(1, user);
 		preparedStatement.setString(2, pw);
@@ -454,7 +444,7 @@ public class SQLAccess {
 						"where  DENOMINATION = " + "'" + denomination + "'");
 
 		String response;
-		response = toJObj (resultSet);
+		response = resultset_to_json (resultSet);
 		return response;
 	}
 
@@ -466,7 +456,7 @@ public class SQLAccess {
 						"where COD_M = " + COD_M );
 
 		String response;
-		response = toJObj (resultSet);
+		response = resultset_to_json (resultSet);
 		return response;
 	}
 
@@ -477,7 +467,7 @@ public class SQLAccess {
 						"from MONSTER_FIGHTING " +
 						"where COD_M = " + COD_M );
 		String response;
-		response = toJObj (resultSet);
+		response = resultset_to_json (resultSet);
 		return response;
 	}
 
@@ -488,7 +478,7 @@ public class SQLAccess {
 						"from WEARABLE " +
 						"where W_NAME = " + w_name );
 		String response;
-		response = toJObj (resultSet);
+		response = resultset_to_json (resultSet);
 		return response;
 	}
 
@@ -501,7 +491,7 @@ public class SQLAccess {
 				"and w.W_NAME = e.W_NAME");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 		return response;
 	}
 
@@ -519,7 +509,7 @@ public class SQLAccess {
 				"and mo.COD_M = mf.COD_M ");
 
 		String response;
-		response = toJArr (resultSet);	
+		response = resultset_to_json (resultSet);	
 
 		return response; 
 	}
@@ -534,7 +524,7 @@ public class SQLAccess {
 				"and ma.A_NAME = a.A_NAME ");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}
@@ -549,7 +539,7 @@ public class SQLAccess {
 				"and e.W_NAME = w.W_NAME ");
 
 		String response;
-		response =toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}
@@ -562,11 +552,41 @@ public class SQLAccess {
 						"where  mo.ID_OWNER = '" + user + "'");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
+
+		return response; 
+	}
+	
+	public String showInTeam (String user) throws SQLException { 
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+				"select * " +
+						"from TEAM t " +
+						"where  t.ID_USER = '" + user + "'");
+
+		String response;
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}
 
+	public String showNotInTeam (String user) throws SQLException { 
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+				"select * " +
+						"from MONSTER_OWNED mo " +
+						"where  mo.ID_OWNER = '" + user + "'" +
+						"and mo.COD_M not in " +
+						"(select t.COD_M " +
+						"from TEAM t " +
+						"where t.ID_USER = '" + user + "')");
+
+		String response;
+		response = resultset_to_json (resultSet);
+
+		return response; 
+	}
+	
 	public String sCollection (String user) throws SQLException { 
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery(
@@ -575,7 +595,7 @@ public class SQLAccess {
 						"where ID_OWNER = '" + user + "' ");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}
@@ -588,7 +608,7 @@ public class SQLAccess {
 						"where ID_OWNER = '" + user + "'");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}
@@ -603,7 +623,7 @@ public class SQLAccess {
 						"and w.W_TYPE = '" + type + "'");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}	
@@ -616,7 +636,7 @@ public class SQLAccess {
 				"order by PRIORITY");
 
 		String response;
-		response = toJArr (resultSet);
+		response = resultset_to_json (resultSet);
 
 		return response; 
 	}
@@ -811,7 +831,9 @@ public class SQLAccess {
 	public String createGame (String id1, String id2) throws SQLException { 
 		statement = connect.createStatement();
 
-		int up = statement.executeUpdate("insert into GAME (ID1, ID2) values ( '"  + id1 + "', '" + id2 + "' )");
+		Date d = new Date();
+		
+		int up = statement.executeUpdate("insert into GAME (ID1, ID2, Tm) values ( '"  + id1 + "', '" + id2 + "', '" + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds() + "')");
 
 		if(up == 0)
 			return "Inserimento non riuscito";
@@ -859,7 +881,8 @@ public class SQLAccess {
 
 		statement = connect.createStatement();
 		//Estraggo dall'array di JSON l'unico oggetto inserito
-		JSONObject monsterStat = new JSONObject(showMonsterStatWithBonus(COD_M));
+		JSONArray jarr = new JSONArray(showMonsterStatWithBonus(COD_M));
+		JSONObject monsterStat = jarr.getJSONObject(0);
 		//Inserisce in moster fighting il mostro COD_M nella posizione POS
 		statement.executeUpdate(""
 				+ "insert into MONSTER_FIGHTING (COD_M, POS, HP, AD, AP ,DEF ,MDEF)"
@@ -888,12 +911,14 @@ public class SQLAccess {
 				+ " and mo.denomination = m.denomination"
 				+ " and mo.COD_M = " + COD_M );
 		//Trasforma in stringa JSON
-		String response= toJObj (resultSet);	
+		String response= resultset_to_json (resultSet);	
 		return response;
 	}
 
 	public String showMonsterStatWithBonus(int COD_M) throws SQLException, JSONException{		//Restituisce statistiche riguardanti un mostro in combattimento
-		JSONObject stat = new JSONObject(showMonsterStat(COD_M));						//statistiche base
+		JSONArray jstat = new JSONArray(showMonsterStat(COD_M));		
+		JSONObject stat = jstat.getJSONObject(0);						//statistiche base
+
 
 		JSONArray wj = new JSONArray(mWInfo(COD_M));		//info equipaggiamento mostro
 		JSONObject wearable;
@@ -910,9 +935,12 @@ public class SQLAccess {
 	}
 
 	public String attackEffect(int COD_A, int COD_T) throws SQLException, JSONException{		//COD_A -> COD_M attaccante & COD_T -> COD_M difensore
-		JSONObject aStat = new JSONObject(mfInfo(COD_A));		//statistiche attaccante
-		JSONObject tStat = new JSONObject(mfInfo(COD_T));
-	
+		JSONArray aj = new JSONArray(mfInfo(COD_A));
+		JSONObject aStat = aj.getJSONObject(0);		//statistiche attaccante
+
+		JSONArray tj = new JSONArray(mfInfo(COD_T));
+		JSONObject tStat = tj.getJSONObject(0);		//statistiche target
+
 		int attkD = aStat.getInt("AD");			//ad damage, attacco fisico base
 
 		int defD = tStat.getInt("DEF");			//difesa fisica
@@ -936,7 +964,7 @@ public class SQLAccess {
 		statement = connect.createStatement();
 
 		resultSet = statement.executeQuery("");
-		String response= toJArr (resultSet);  //controlla se ti serve array jason o object IO NON LO SO	
+		String response= resultset_to_json (resultSet);	
 		return response;
 	}
 
@@ -1036,7 +1064,7 @@ public class SQLAccess {
 				+ "select *"
 				+ " from MONSTER_STORE ms, MONSTER m"
 				+ " where m.DENOMINATION = ms.DENOMINATION");
-		return toJArr(resultSet);
+		return resultset_to_json(resultSet);
 	}
 
 	public String showWearableStore() throws SQLException{
@@ -1045,7 +1073,7 @@ public class SQLAccess {
 				+ "select * "
 				+ "from WEARABLE_STORE ws, WEARABLE w"
 				+ " where w.W_NAME = ws.W_NAME");
-		return toJArr(resultSet);
+		return resultset_to_json(resultSet);
 	}
 	
 } 
