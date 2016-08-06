@@ -174,6 +174,24 @@ public class ServerRes extends ServerResource {
 			}
 			return response;
 		}
+		
+		if (Segm.get(0).equals("showInTeam")){			// http://localhost:8080/showTeam/ID
+			String user = (String) Segm.get(1);
+			response = db.showInTeam(user);
+
+			jarr = new JSONArray(response);
+
+			return response;			
+		}
+		
+		if (Segm.get(0).equals("showNotInTeam")){			// http://localhost:8080/showNotInTeam/ID
+			String user = (String) Segm.get(1);
+			response = db.showNotInTeam(user);
+
+			jarr = new JSONArray(response);
+
+			return response;			
+		}
 
 		if (Segm.get(0).equals("nAvailable")){		// http://localhost:8080/nAvailable/ID/W_NAME
 			String user = ((String) Segm.get(1)).replace("%20", " ");
@@ -271,7 +289,7 @@ public class ServerRes extends ServerResource {
 			return "Still searching for a foe";
 		}
 
-		if(Segm.get(0).equals("createGame")){	// http://localhost:8080/createGame/ID1/ID2
+		if(Segm.get(0).equals("createGame")){	// http://localhost:8080/createGame/ID1/ID2/Tm
 			String id1 = ((String) Segm.get(1)).replace("%20", " ");
 			String id2 = ((String) Segm.get(2)).replace("%20", " ");
 			return db.createGame(id1, id2);
@@ -304,7 +322,7 @@ public class ServerRes extends ServerResource {
 			return "Monster position already taken";
 		}
 
-		if(Segm.get(0).equals("showMonsterStat")){	// http://localhost:8080/ShowMonsterStat/COD_M
+		if(Segm.get(0).equals("showMonsterStat")){	// http://localhost:8080/showMonsterStat/COD_M
 			int COD_M = Integer.parseInt((String) Segm.get(1));		
 			response = db.showMonsterStat(COD_M);
 			return response;
@@ -366,6 +384,8 @@ public class ServerRes extends ServerResource {
 		response += "mAbility:				http://localhost:8080/mAbility/COD_M \n";
 		response += "mEquipped:				http://localhost:8080/mEquipped/COD_M \n";
 		response += "mCollection:				http://localhost:8080/mCollection/ID \n";
+		response += "showInTeam:				http://localhost:8080/showInTeam/ID \n";
+		response += "showNotInTeam:				http://localhost:8080/showNotInTeam/ID \n";
 		response += "nAvailable: 				http://localhost:8080/nAvailable/ID/W_NAME \n";	
 		response += "Supplies collection:			http://localhost:8080/sCollection/ID/W_NAME \n";	
 		response += "Wearable collection: 			http://localhost:8080/wCollection/ID/W_NAME \n";	
@@ -387,7 +407,7 @@ public class ServerRes extends ServerResource {
 		response += "Clear Queue:				http://localhost:8080/clearQueue \n";
 		response += "Clear ActionQueue:			http://localhost:8080/clearActionQueue/user \n";
 		response += "addToFighting:				http://localhost:8080/addToFighting/COD_M/pos \n";
-		response += "showMonsterStat:			http://localhost:8080/ShowMonsterStat/COD_M \n";
+		response += "showMonsterStat:			http://localhost:8080/showMonsterStat/COD_M \n";
 		response += "attackEffect:				http://localhost:8080/attackEffect/COD_A/COD_T \n";
 		response += "mWInfo:					http://localhost:8080/mWInfo/COD_M \n";
 		response += "showMonsterStatWithBonus:	http://localhost:8080/showMonsterStatWithBonus/COD_M \n";
