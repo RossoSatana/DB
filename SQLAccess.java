@@ -1,11 +1,13 @@
 package db.restlet;
 
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -45,6 +47,28 @@ public class SQLAccess {
 		}
 		return jarr.toString();
 	}
+	
+	private String toJArr(ResultSet rs) throws SQLException {
+		JSONArray jarr = new JSONArray();
+		while (rs.next()){
+		HashMap<String, String> row = new HashMap<String, String>();
+		for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) 
+		row.put(rs.getMetaData().getColumnName(i), String.valueOf(rs.getObject(i)));
+		jarr.put(new JSONObject(row));
+		}
+		return jarr.toString();
+		}
+	
+	private String toJObj(ResultSet rs) throws SQLException {
+		if(!rs.next())
+		return "Error";
+
+		HashMap<String, String> row = new HashMap<String, String>();
+		for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) 
+		row.put(rs.getMetaData().getColumnName(i), String.valueOf(rs.getObject(i)));
+
+		return new JSONObject(row).toString();
+		}
 	
 	private String error_to_json(String error) throws SQLException, JSONException {	
 		JSONObject jobj = new JSONObject();
@@ -885,8 +909,7 @@ public class SQLAccess {
 
 		statement = connect.createStatement();
 		//Estraggo dall'array di JSON l'unico oggetto inserito
-		JSONArray jarr = new JSONArray(showMonsterStatWithBonus(COD_M));
-		JSONObject monsterStat = jarr.getJSONObject(0);
+		JSONObject monsterStat = new JSONObject(showMonsterStatWithBonus(COD_M));
 		//Inserisce in moster fighting il mostro COD_M nella posizione POS
 		statement.executeUpdate(""
 				+ "insert into MONSTER_FIGHTING (COD_M, POS, HP, AD, AP ,DEF ,MDEF)"
@@ -915,13 +938,12 @@ public class SQLAccess {
 				+ " and mo.denomination = m.denomination"
 				+ " and mo.COD_M = " + COD_M );
 		//Trasforma in stringa JSON
-		String response= resultset_to_json (resultSet);	
+		String response= toJObj (resultSet);	
 		return response;
 	}
 
 	public String showMonsterStatWithBonus(int COD_M) throws SQLException, JSONException{		//Restituisce statistiche riguardanti un mostro in combattimento
-		JSONArray jstat = new JSONArray(showMonsterStat(COD_M));		
-		JSONObject stat = jstat.getJSONObject(0);						//statistiche base
+		 JSONObject stat = new JSONObject(showMonsterStat(COD_M));					//statistiche base
 
 
 		JSONArray wj = new JSONArray(mWInfo(COD_M));		//info equipaggiamento mostro
@@ -1080,4 +1102,38 @@ public class SQLAccess {
 		return resultset_to_json(resultSet);
 	}
 	
+	public String round (String user) throws SQLException, JSONException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select hour(TM) as h, minute(TM) as m, second(TM) as s, ID1, ID2 " 
+				+ "from GAME "
+				+ "where ID1 = '" + user + "' "
+				+ "or ID2 = '" + user + "'");
+		
+		JSONObject jobj = new JSONObject(toJObj(resultSet));
+		Date d = new Date();
+		int Tx = d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds();
+		int Ti = jobj.getInt("h")*3600 + jobj.getInt("m")*60 + 35 + jobj.getInt("s");
+		
+		if( ((int)(Tx-Ti)/30)%2 == 0)
+			return jobj.getString("ID1");			
+		
+		return jobj.getString("ID2");
+	}
+	
+	public String loadingsec (String user) throws SQLException, JSONException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select hour(TM) as h, minute(TM) as m, second(TM) as s " 
+				+ "from GAME "
+				+ "where ID1 = '" + user + "' "
+				+ "or ID2 = '" + user + "'");
+		
+		JSONObject jobj = new JSONObject(toJObj(resultSet));
+		Date d = new Date();
+		int Tx = d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds();
+		int Ti = jobj.getInt("h")*3600 + jobj.getInt("m")*60 + jobj.getInt("s") + 30;
+	
+		return Integer.toString(Ti - Tx);		//secondi che mancano all'inizio del game
+	}
 } 

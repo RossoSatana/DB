@@ -18,6 +18,10 @@ import org.restlet.data.Protocol;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
 import db.restlet.SQLAccess;
 import db.restlet.ServerRes;
 
@@ -175,7 +179,7 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
-		if (Segm.get(0).equals("showInTeam")){			// http://localhost:8080/showTeam/ID
+		if (Segm.get(0).equals("showInTeam")){			// http://localhost:8080/showInTeam/ID
 			String user = (String) Segm.get(1);
 			response = db.showInTeam(user);
 
@@ -280,6 +284,11 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 
+		if (Segm.get(0).equals("findFoe")){		// http://localhost:8080/searchMatch/ID
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			return db.findFoe(user);
+		}
+		
 		if (Segm.get(0).equals("searchMatch")){		// http://localhost:8080/searchMatch/ID
 			String user = ((String) Segm.get(1)).replace("%20", " ");
 			if (db.searchMatch(user) == true){
@@ -369,7 +378,19 @@ public class ServerRes extends ServerResource {
 		if(Segm.get(0).equals("showWearableStore")){	// http://localhost:8080/showMonsterStore
 			return db.showWearableStore();
 		}
+		
+		if(Segm.get(0).equals("round")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.round(user);
+			return response;
+		}
 
+		if(Segm.get(0).equals("loadingsec")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.loadingsec(user);
+			return response;
+		}
+		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
 		response += "Login: 					http://localhost:8080/Login/ID/PW \n";
@@ -399,9 +420,9 @@ public class ServerRes extends ServerResource {
 		response += "lvlUp:					http://localhost:8080/lvlUp/COD_M \n";
 		response += "lvlAvg:					http://localhost:8080/lvlAvg/ID \n";
 		response += "aAttack:				http://localhost:8080/aAttack/COD_M/COD_M \n";
-		response += "aMove:					http://localhost:8080/aMove/COD_M/po \n";
 		response += "aAbility:				http://localhost:8080/aAbility/COD_M/COD_MA/a_name \n";
 		response += "searchMatch:				http://localhost:8080/searchMatch/ID \n";
+		response += "Find Foe:				http://localhost:8080/findFoe/ID \n";
 		response += "Create Game:				http://localhost:8080/createGame/ID1/ID2 \n";
 		response += "Clear Games:				http://localhost:8080/clearGames \n";
 		response += "Clear Queue:				http://localhost:8080/clearQueue \n";
@@ -415,6 +436,7 @@ public class ServerRes extends ServerResource {
 		response += "Buy Wearable:				http://localhost:8080/buyWearable/user/w_name \n";
 		response += "Show Monster Store:		http://localhost:8080/showMonsterStore \n";
 		response += "Show Monster Store:		http://localhost:8080/showMonsterStore \n";
+		response += "Round:						http://localhost:8080/round/ID \n";
 		response += " \n";
 		
 		return response;
