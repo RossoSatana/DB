@@ -79,7 +79,7 @@ public class Matching {
 			}
 				i++;
 		}
-		System.out.println("Not enought player in queue");
+	//	System.out.println("Not enought player in queue");
 	}	
 	
 }
