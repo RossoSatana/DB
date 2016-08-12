@@ -91,17 +91,16 @@ public class ServerRes extends ServerResource {
 			return db.mUnequip(COD_M, w_name);
 		}
 
+		if (Segm.get(0).equals("classInfo")){		// http://localhost:8080/classInfo/class
+			String clas = (String) Segm.get(1);			
+			response = db.classInfo(clas);
+			return response;
+		}
+		
 		if (Segm.get(0).equals("mInfo")){		// http://localhost:8080/mInfo/denomination
 
 			String denomination = (String) Segm.get(1);			
 			response = db.mInfo(denomination);
-
-			jarr = new JSONArray(response);
-
-			for (int i=0; i<jarr.length(); i++){
-				jobj = jarr.getJSONObject(i);
-				System.out.println("Monster: " + jobj.get("DENOMINATION"));
-			}
 			return response;
 		}
 
@@ -109,13 +108,6 @@ public class ServerRes extends ServerResource {
 
 			int COD_M = Integer.parseInt((String) Segm.get(1));			
 			response = db.moInfo(COD_M);
-
-			jarr = new JSONArray(response);
-
-			for (int i=0; i<jarr.length(); i++){
-				jobj = jarr.getJSONObject(i);
-				System.out.println("Monster: " + jobj.get("NAME"));
-			}
 			return response;
 		}
 
@@ -123,7 +115,6 @@ public class ServerRes extends ServerResource {
 
 			int COD_M = Integer.parseInt((String) Segm.get(1));			
 			response = db.mfInfo(COD_M);
-			
 			return response;
 		}
 
@@ -390,6 +381,20 @@ public class ServerRes extends ServerResource {
 			response = db.loadingsec(user);
 			return response;
 		}
+		
+		if(Segm.get(0).equals("chatRead")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.chatRead(user);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("chatWrite")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			String message = ((String) Segm.get(2)).replace("%20", " ");
+			response = db.chatWrite(user, message);
+			return response;
+		}
+		
 		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
