@@ -468,7 +468,19 @@ public class SQLAccess {
 						"where  DENOMINATION = " + "'" + denomination + "'");
 
 		String response;
-		response = resultset_to_json (resultSet);
+		response = toJObj (resultSet);
+		return response;
+	}
+	
+	public String classInfo (String clas) throws SQLException {
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(
+				"select * " +
+						"from CLASSES " +
+						"where  CLASS = " + "'" + clas + "'");
+
+		String response;
+		response = toJObj (resultSet);
 		return response;
 	}
 
@@ -480,7 +492,7 @@ public class SQLAccess {
 						"where COD_M = " + COD_M );
 
 		String response;
-		response = resultset_to_json (resultSet);
+		response = toJObj (resultSet);
 		return response;
 	}
 
@@ -491,7 +503,7 @@ public class SQLAccess {
 						"from MONSTER_FIGHTING " +
 						"where COD_M = " + COD_M );
 		String response;
-		response = resultset_to_json (resultSet);
+		response = toJObj (resultSet);
 		return response;
 	}
 
@@ -502,7 +514,7 @@ public class SQLAccess {
 						"from WEARABLE " +
 						"where W_NAME = " + w_name );
 		String response;
-		response = resultset_to_json (resultSet);
+		response = toJObj (resultSet);
 		return response;
 	}
 
@@ -802,8 +814,8 @@ public class SQLAccess {
 				+ "insert into A_ATTACK(COD_M,COD_MA)"
 				+ " values (" + COD_M + "," + COD_MA + ")");
 		/*Manca la parte di attuazione attacco con conseguente diminuzione di hp e morte*/
-		attackEffect(COD_M, COD_MA);
-		String response = " Monster:" + COD_M + " attacked monster:" + COD_MA;
+		String attackEff = attackEffect(COD_M, COD_MA);
+		String response = "Monster:" + COD_M + " attacked monster:" + COD_MA + "\n" + attackEff;
 		return response;
 	}
 
@@ -842,6 +854,8 @@ public class SQLAccess {
 		statement = connect.createStatement();
 
 		statement.executeUpdate("truncate GAME");
+		
+		statement.executeUpdate("truncate CHAT");
 
 		String response = "Games cleared";
 		return response;
@@ -865,7 +879,12 @@ public class SQLAccess {
 
 		if(up == 0)
 			return "Inserimento non riuscito";
+		
+		up = statement.executeUpdate("INSERT INTO CHAT (ID1, ID2) VALUES ('" + id1 + "', '" + id2 + "')");
 
+		if(up==0)
+			return "Chat non creata";
+		
 		String response = "Game started: " + id1 + " vs. " + id2;
 		return response; 
 	}
@@ -961,11 +980,9 @@ public class SQLAccess {
 	}
 
 	public String attackEffect(int COD_A, int COD_T) throws SQLException, JSONException{		//COD_A -> COD_M attaccante & COD_T -> COD_M difensore
-		JSONArray aj = new JSONArray(mfInfo(COD_A));
-		JSONObject aStat = aj.getJSONObject(0);		//statistiche attaccante
+		JSONObject aStat = new JSONObject(mfInfo(COD_A));	//statistiche attaccante
 
-		JSONArray tj = new JSONArray(mfInfo(COD_T));
-		JSONObject tStat = tj.getJSONObject(0);		//statistiche target
+		JSONObject tStat = new JSONObject(mfInfo(COD_T));	//statistiche target
 
 		int attkD = aStat.getInt("AD");			//ad damage, attacco fisico base
 
@@ -983,7 +1000,7 @@ public class SQLAccess {
 				+ "update MONSTER_FIGHTING "
 				+ "set HP = HP - " + totDamage + " "
 				+ "where COD_M = " + COD_T);
-		return "Attack effect calculated";
+		return "Damage delt: " + totDamage;
 	}
 
 	public String abilityEffect(int COD_A, int COD_T, String a_name) throws SQLException{		//COD_A -> COD_M attaccante & COD_T -> COD_M difensore
@@ -1135,5 +1152,51 @@ public class SQLAccess {
 		int Ti = jobj.getInt("h")*3600 + jobj.getInt("m")*60 + jobj.getInt("s") + 30;
 	
 		return Integer.toString(Ti - Tx);		//secondi che mancano all'inizio del game
+	}
+	
+	/*public String chatCreate (String id1, String id2) throws SQLException{
+		statement = connect.createStatement();
+		statement.executeUpdate(""
+						+ "INSERT INTO CHAT (ID1, ID2) VALUES ('" + id1 + "', '" + id2 + "')");
+		return "Chat created";		
+	}*/
+
+	public String chatWrite(String user, String message) throws SQLException {
+		statement = connect.createStatement();
+		/*Mette il mostro COD_M nella posizione pos SENZA scambio con altri mostri*/
+		statement.executeUpdate(""
+						+ "UPDATE CHAT "
+						+ "SET CHATTING1 = '" + message + "' "
+						+ "WHERE ID1 = '" + user + "'; ");
+		statement.executeUpdate(""
+						+ "UPDATE CHAT "
+						+ "SET CHATTING2 = '" + message + "' "
+						+ "WHERE ID2 = '" + user + "'; ");
+		return "Message sent";
+	}
+	
+	public String chatRead(String user) throws SQLException {
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "SELECT CHATTING1 "
+				+ "FROM CHAT "
+				+ "WHERE ID2 = '" + user + "'; ");
+		
+		if (resultSet.next())
+			return resultSet.getString("CHATTING1");
+		
+		resultSet = statement.executeQuery(""
+				+ "SELECT CHATTING2 "
+				+ "FROM CHAT "
+				+ "WHERE ID1 = '" + user + "';");
+		resultSet.next();
+		return resultSet.getString("CHATTING2");
+	}
+	
+	public String chatDelete (String id) throws SQLException{
+		statement = connect.createStatement();
+		statement.executeUpdate(""
+						+ "DELETE CHAT WHERE ID1 = '" + id + "' OR ID2 = '" + id + "')");
+		return "Chat created";		
 	}
 } 
