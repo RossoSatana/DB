@@ -395,6 +395,11 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
+		if(Segm.get(0).equals("getFirstPlayer")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.getFirstPlayer(user);
+			return response;
+		}
 		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
