@@ -76,7 +76,6 @@ public class SQLAccess {
 		return jobj.toString();
 	}
 
-
 	public String allUser ()  throws SQLException {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery("select * from USER");
@@ -129,9 +128,9 @@ public class SQLAccess {
 				"where COD_M = " + COD_M );
 
 		if (!resultSet.next())
-			return null; 	//user isn't the owner of item w_name
+			return null; 	//user isn't the owner of monster with COD_M_name
 
-		return resultSet.getString("ID_OWNER");		//user is owner of item w_name
+		return resultSet.getString("ID_OWNER");		//user is owner of monster with COD_M_name
 	} 
 
 	private boolean checkTeamSize(String user) throws SQLException{
@@ -166,7 +165,7 @@ public class SQLAccess {
 
 		String ID1 = resultSet.getString("ID1");
 		String ID2 = resultSet.getString("ID2");
-		if (ID1.equals(user))
+		if (ID1.equalsIgnoreCase(user))
 			return ID2;
 		return ID1;
 	}
@@ -507,6 +506,18 @@ public class SQLAccess {
 		return response;
 	}
 
+	public String tfInfo (String user) throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery("" +
+				"select * " +
+				"from MONSTER_FIGHTING mf, TEAM t " +
+				"WHERE t.COD_M = mf.COD_M " + 
+				"and t.ID_USER = '" + user + "'");
+		String response;
+		response = toJArr (resultSet);
+		return response;
+	}
+	
 	public String wInfo (String w_name)	throws SQLException {
 		statement = connect.createStatement();
 		resultSet = statement.executeQuery(
@@ -797,16 +808,16 @@ public class SQLAccess {
 		statement = connect.createStatement();
 
 		if(!(findFoe(findOwner(COD_M))).equalsIgnoreCase(findOwner(COD_MA)))
-			return error_to_json("Attack target from another battle");
+			return "{\"Error\": \"Attack target from another battle\"}";
 
 		if (checkStatus(COD_M)=="Dead")
-			return error_to_json("Your monster is dead, can't attack");
+			return "{\"Error\": \"Your monster is dead, can't attack\"}";
 		
 		if (checkStatus(COD_MA)=="Dead")
-			return error_to_json("There's no point attacking a dead target");
+			return "{\"Error\": \"There's no point attacking a dead target\"}";
 		
 		if(findRange(COD_M) < (findPosition(COD_MA) / 3))				//controllo che l'attaccante riesca a raggiungere il bersaglio (ATTKRANGE)
-			return error_to_json("Monster: "+ COD_M +" can't attack monster: " + COD_MA + " not enought attack range"); 
+			return "{\"Error\": \"Not enought attack range\"}"; 
 
 		mAction(COD_M,  "attack");
 		/*inserisce nella tabella A_ATTACK l'attacco effettuato*/
@@ -815,8 +826,7 @@ public class SQLAccess {
 				+ " values (" + COD_M + "," + COD_MA + ")");
 		/*Manca la parte di attuazione attacco con conseguente diminuzione di hp e morte*/
 		String attackEff = attackEffect(COD_M, COD_MA);
-		String response = "Monster:" + COD_M + " attacked monster:" + COD_MA + "\n" + attackEff;
-		return response;
+		return attackEff;
 	}
 
 	public String aMove(int COD_M,  int pos) throws SQLException{
@@ -895,26 +905,30 @@ public class SQLAccess {
 		//Cancella tutte le monster_action riguardnti un certo user
 		statement.executeUpdate("delete from MONSTER_ACTION " +
 				"where COD_M in " +
-				"( select COD_M from TEAM " +
-				"where ID_USER = '" + user + "')");
+				"( select mf.COD_M from MONSTER_FIGHTING mf, TEAM t " +
+				"where t.ID_USER = '" + user + "' " +
+				"and mf.COD_M = t.COD_M)");
 
 		//Cancella tutte le a_attack riguardnti un certo user
 		statement.executeUpdate("delete from A_ATTACK " +
 				"where COD_M in " +
-				"( select COD_M from TEAM " +
-				"where ID_USER = '" + user + "')");
+				"( select mf.COD_M from MONSTER_FIGHTING mf, TEAM t " +
+				"where t.ID_USER = '" + user + "' " +
+				"and mf.COD_M = t.COD_M)");
 
 		//Cancella tutte le a_ability riguardnti un certo user
 		statement.executeUpdate("delete from A_ABILITY " +
 				"where COD_M in " +
-				"( select COD_M from TEAM " +
-				"where ID_USER = '" + user + "')");
+				"( select mf.COD_M from MONSTER_FIGHTING mf, TEAM t " +
+				"where t.ID_USER = '" + user + "' " +
+				"and mf.COD_M = t.COD_M)");
 
 		//Cancella tutte le a_move riguardnti un certo user
 		statement.executeUpdate("delete from A_MOVE " +
 				"where COD_M in " +
-				"( select COD_M from TEAM " +
-				"where ID_USER = '" + user + "')");
+				"( select mf.COD_M from MONSTER_FIGHTING mf, TEAM t " +
+				"where t.ID_USER = '" + user + "' " +
+				"and mf.COD_M = t.COD_M)");
 
 		String response = "ActionQueue cleared";
 		return response;
@@ -1000,7 +1014,7 @@ public class SQLAccess {
 				+ "update MONSTER_FIGHTING "
 				+ "set HP = HP - " + totDamage + " "
 				+ "where COD_M = " + COD_T);
-		return "Damage delt: " + totDamage;
+		return "{\"Damage\": \"" + totDamage + "\"}";
 	}
 
 	public String abilityEffect(int COD_A, int COD_T, String a_name) throws SQLException{		//COD_A -> COD_M attaccante & COD_T -> COD_M difensore
@@ -1198,5 +1212,15 @@ public class SQLAccess {
 		statement.executeUpdate(""
 						+ "DELETE CHAT WHERE ID1 = '" + id + "' OR ID2 = '" + id + "')");
 		return "Chat created";		
+	}
+	
+	public String getFirstPlayer (String user) throws SQLException{
+		resultSet = statement.executeQuery(""
+				+ "SELECT ID1 "
+				+ "FROM GAME "
+				+ "WHERE ID1 = '" + user + "' "
+				+ "OR ID2 = '" + user + "';");
+		resultSet.next();
+		return resultSet.getString("ID1");
 	}
 } 
