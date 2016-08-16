@@ -3,6 +3,8 @@ package db.restlet;
 import db.restlet.*;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.sql.SQLException;
 
 import org.json.JSONArray;
@@ -29,7 +31,7 @@ public class ServerRes extends ServerResource {
 	SQLAccess db = new SQLAccess();			//Apro connessione a DB	
 
 	@Get  
-	public String handleConnection() throws SQLException, JSONException {  
+	public String handleConnection() throws SQLException, JSONException, UnsupportedEncodingException {  
 		String response = "";
 		//System.out.println(getClientInfo());
 
@@ -117,7 +119,13 @@ public class ServerRes extends ServerResource {
 			response = db.mfInfo(COD_M);
 			return response;
 		}
-
+		
+		if (Segm.get(0).equals("tfInfo")){		// http://localhost:8080/tfInfo/ID
+			String user = ((String) Segm.get(1)).replace("%20", " ");		
+			response = db.tfInfo(user);
+			return response;
+		}
+		
 		if (Segm.get(0).equals("mFighting")){		// http://localhost:8080/mFighting/ID
 			String user = (String) Segm.get(1);
 			response = db.mFighting(user);
@@ -315,11 +323,17 @@ public class ServerRes extends ServerResource {
 		}
 
 		if(Segm.get(0).equals("addToFighting")){	// http://localhost:8080/addToFighting/COD_M/pos
-			int COD_M = Integer.parseInt((String) Segm.get(1));		
-			int POS = Integer.parseInt((String) Segm.get(2));
-			if(db.addToFighting(COD_M, POS))
-				return "Monster added to fighting";
-			return "Monster position already taken";
+			String mJarr = URLDecoder.decode((String) Segm.get(1), "UTF-8");
+			System.out.println(mJarr);
+			jarr = new JSONArray (mJarr);
+			
+			for(int i=0; i<jarr.length(); i++){
+				jobj = jarr.getJSONObject(i);
+				if(!db.addToFighting(jobj.getInt("COD"), jobj.getInt("POS")))
+					return "Monster position already taken";
+			}
+			
+			return "Monsters added to fighting";
 		}
 
 		if(Segm.get(0).equals("showMonsterStat")){	// http://localhost:8080/showMonsterStat/COD_M
@@ -395,6 +409,11 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
+		if(Segm.get(0).equals("getFirstPlayer")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.getFirstPlayer(user);
+			return response;
+		}
 		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
@@ -406,6 +425,7 @@ public class ServerRes extends ServerResource {
 		response += "mInfo: 					http://localhost:8080/mInfo/denomination \n";
 		response += "moInfo:					http://localhost:8080/moInfo/COD_M \n";
 		response += "mfInfo:					http://localhost:8080/mfInfo/COD_M \n";
+		response += "tfInfo:					http://localhost:8080/tfInfo/ID \n";
 		response += "mFighting:				http://localhost:8080/mFighting/ID \n";
 		response += "mAbility:				http://localhost:8080/mAbility/COD_M \n";
 		response += "mEquipped:				http://localhost:8080/mEquipped/COD_M \n";
