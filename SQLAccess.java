@@ -270,9 +270,9 @@ public class SQLAccess {
 	}
 
 
-	private String checkStatus (int COD_M) throws SQLException { 		//controlla lo status di un mostro in combattimento
+	String checkStatus (int COD_M) throws SQLException { 		//controlla lo status di un mostro in combattimento
 		statement = connect.createStatement();
-
+		
 		resultSet = statement.executeQuery("select STATUS " +
 				"from MONSTER_FIGHTING " +
 				"where COD_M = " + COD_M );
@@ -810,10 +810,10 @@ public class SQLAccess {
 		if(!(findFoe(findOwner(COD_M))).equalsIgnoreCase(findOwner(COD_MA)))
 			return "{\"Error\": \"Attack target from another battle\"}";
 
-		if (checkStatus(COD_M)=="Dead")
+		if (checkStatus(COD_M).equalsIgnoreCase("dead"))
 			return "{\"Error\": \"Your monster is dead, can't attack\"}";
 		
-		if (checkStatus(COD_MA)=="Dead")
+		if (checkStatus(COD_MA).equalsIgnoreCase("dead"))
 			return "{\"Error\": \"There's no point attacking a dead target\"}";
 		
 		if(findRange(COD_M) < (findPosition(COD_MA) / 3))				//controllo che l'attaccante riesca a raggiungere il bersaglio (ATTKRANGE)
@@ -860,12 +860,21 @@ public class SQLAccess {
 		return true;
 	}
 
-	public String clearGames() throws SQLException{
+	public String clearGames() throws SQLException, JSONException{
 		statement = connect.createStatement();
-
-		statement.executeUpdate("truncate GAME");
+		JSONArray jarr = new JSONArray (Games());
 		
-		statement.executeUpdate("truncate CHAT");
+		for(int i=0; i<jarr.length(); i++){
+			JSONObject jobj = jarr.getJSONObject(i); 
+			
+			if(jobj.getString("STATUS").equalsIgnoreCase("zombie")){
+				statement.executeUpdate("delete from CHAT where ID1 = '" + jobj.getString("ID1") + "';");
+				statement.executeUpdate("delete from A_ATTACK where COD_M in (select mf.COD_M from MONSTER_FIGHTING mf, TEAM t where t.ID_USER = '" + jobj.getString("ID1") + "' OR t.ID_USER = '" + jobj.getString("ID2") + "' AND mf.COD_M = t.COD_M)");
+				statement.executeUpdate("delete from MONSTER_ACTION where COD_M in (select mf.COD_M from MONSTER_FIGHTING mf, TEAM t where t.ID_USER = '" + jobj.getString("ID1") + "' OR t.ID_USER = '" + jobj.getString("ID2") + "' AND mf.COD_M = t.COD_M)");
+				statement.executeUpdate("delete from MONSTER_FIGHTING where COD_M in (select t.COD_M from TEAM t where t.ID_USER = '" + jobj.getString("ID1") + "' OR t.ID_USER = '" + jobj.getString("ID2") + "')");
+			}
+		}
+		statement.executeUpdate("delete from GAME where STATUS = 'zombie';");
 
 		String response = "Games cleared";
 		return response;
@@ -1001,19 +1010,24 @@ public class SQLAccess {
 		int attkD = aStat.getInt("AD");			//ad damage, attacco fisico base
 
 		int defD = tStat.getInt("DEF");			//difesa fisica
+		
+		String status = tStat.getString("STATUS");
 
 		int D = attkD - defD;
 		if (D<0)	D=0;
 
 		int totDamage = D;
-		if (tStat.getInt("HP") < totDamage)
+		if (tStat.getInt("HP") <= totDamage){
 			totDamage = tStat.getInt("HP");
-
+			status = "dead";
+		}
+			
 		statement = connect.createStatement();
 		statement.executeUpdate(""
-				+ "update MONSTER_FIGHTING "
-				+ "set HP = HP - " + totDamage + " "
-				+ "where COD_M = " + COD_T);
+					+ "update MONSTER_FIGHTING "
+					+ "set STATUS = '"+ status +"',  HP = HP - " + totDamage + " "
+					+ "where COD_M = " + COD_T);
+		
 		return "{\"Damage\": \"" + totDamage + "\"}";
 	}
 
@@ -1222,5 +1236,110 @@ public class SQLAccess {
 				+ "OR ID2 = '" + user + "';");
 		resultSet.next();
 		return resultSet.getString("ID1");
+	}
+	
+	public String mt (String user) throws SQLException { 
+		statement = connect.createStatement();
+		
+		resultSet = statement.executeQuery(""
+				+ "select cl.AD*LVL + m.AD as 'ADL', cl.AP*LVL+m.AP as 'APL', cl.DEF*LVL + m.DEF as 'DEFL', cl.MDEF*LVL + m.MDEF as 'MDEFL', cl.HP*LVL + m.HP as 'HPL', m.DENOMINATION, ATTKRANGE, m.CLASS, TYPE,  NAME, LVL, EXP, mo.COD_M"   
+				+ " from MONSTER_OWNED mo, MONSTER m, CLASSES cl"
+				+ " where mo.denomination = m.denomination"
+				+ " and m.class = cl.class"
+				+ " and mo.ID_OWNER = '" + user + "' "
+				+ " and mo.COD_M = ANY ( select cod_m" 
+								+	" from TEAM tm"
+								+	" )"
+				+ " group by mo.COD_M");
+
+		String response;
+		response = toJArr(resultSet);
+
+		return response; 
+	}
+	
+	
+
+	public String mnt (String user) throws SQLException { 
+		statement = connect.createStatement();
+
+		resultSet = statement.executeQuery(""
+				+ "select cl.AD*LVL + m.AD as 'ADL', cl.AP*LVL+m.AP as 'APL', cl.DEF*LVL + m.DEF as 'DEFL', cl.MDEF*LVL + m.MDEF as 'MDEFL', cl.HP*LVL + m.HP as 'HPL', m.DENOMINATION, ATTKRANGE, m.CLASS, TYPE,  NAME, LVL, EXP, mo.COD_M"   
+				+ " from MONSTER_OWNED mo, MONSTER m, CLASSES cl"
+				+ " where mo.DENOMINATION = m.DENOMINATION"
+				+ " and m.CLASS = cl.CLASS"
+				+ " and mo.ID_OWNER = '" + user + "' "
+				+ " and mo.COD_M not in ( select COD_M" 
+								+	" from TEAM tm"
+								+	" )"
+				+ " group by mo.COD_M");
+
+		String response;
+		response = toJArr(resultSet);
+
+		return response; 
+	}
+	
+	public String Games () throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select * "
+				+ " from GAME");
+		
+		return toJArr(resultSet);		
+	}
+	
+	public boolean allDead(String user) throws SQLException, JSONException{
+		JSONArray jarr = new JSONArray(tfInfo(user));	//informazioni su tutti i mostri in fighting
+		
+		for (int i=0; i<jarr.length(); i++){
+			JSONObject jobj = jarr.getJSONObject(i);
+			//System.out.println(jobj.getString("STATUS") + jobj.getString("STATUS").equalsIgnoreCase("dead"));
+			if(!jobj.getString("STATUS").equalsIgnoreCase("dead"))	//se almeno un mostro ha status != da dead allora non sono tutti morti
+				return false;
+		}
+		return true;
+	}
+	
+	public void setGameStatus (String user, String status) throws SQLException{
+		statement.executeUpdate(""
+				+ "UPDATE GAME "
+				+ "SET STATUS = '" + status + "' "
+				+ "WHERE ID1 = '" + user + "' "
+				+ "OR ID2 = '" + user + "'");
+	}
+	
+	public void setGameWinner (String user) throws SQLException{
+		statement.executeUpdate(""
+				+ "UPDATE GAME "
+				+ "SET WINNER = '" + user + "' "
+				+ "WHERE ID1 = '" + user + "' "
+				+ "OR ID2 = '" + user + "'");
+	}
+	
+	public String checkGameStatus (String user) throws SQLException{
+		statement = connect.createStatement();
+		resultSet = statement.executeQuery(""
+				+ "select STATUS, WINNER "
+				+ " from GAME "
+				+ "WHERE ID1 = '" + user + "' "
+				+ "OR ID2 = '" + user + "'");
+		
+		return toJObj(resultSet);
+	}
+
+	public String endVisualized(String user) throws SQLException, JSONException {
+		JSONObject jobj = new JSONObject (checkGameStatus(user));
+		
+		if(jobj.getString("STATUS").equalsIgnoreCase("ended")){
+			setGameStatus(user, "visualized");
+			return "State set: visualized";
+		}
+		if(jobj.getString("STATUS").equalsIgnoreCase("visualized"))
+		{
+			setGameStatus(user, "zombie");
+			return "State set: zombie";
+		}
+		return "";
 	}
 } 

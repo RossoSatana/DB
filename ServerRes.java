@@ -37,6 +37,7 @@ public class ServerRes extends ServerResource {
 
 		try {
 			db.connection();
+			
 		} catch (Exception e) {
 			System.out.println("Error: DB connection");
 		}
@@ -415,6 +416,32 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
+		if(Segm.get(0).equals("checkGameStatus")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.checkGameStatus(user);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("endVisualized")){
+			String user = ((String) Segm.get(1)).replace("%20", " ");
+			response = db.endVisualized(user);
+			return response;
+		}
+		
+		if(Segm.get(0).equals("mt")){	// http://localhost:8080/addToFighting/COD_M/pos
+			String  user = (String) Segm.get(1);
+			jarr = new JSONArray (db.mt(user));
+			
+			return jarr.toString();
+		}
+		
+		if(Segm.get(0).equals("mnt")){	// http://localhost:8080/addToFighting/COD_M/pos
+			String  user = (String) Segm.get(1);
+			jarr = new JSONArray (db.mnt(user));
+			
+			return jarr.toString();
+		}
+		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
 		response += "Login: 					http://localhost:8080/Login/ID/PW \n";
@@ -470,6 +497,7 @@ public class ServerRes extends ServerResource {
 	public static void main(String[] args) throws Exception {  
 		new Server(Protocol.HTTP, 8080, ServerRes.class).start();
 		new Matching();
+		new MatchManager();
 	}
 
 }  
