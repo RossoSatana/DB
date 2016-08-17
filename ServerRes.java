@@ -415,6 +415,22 @@ public class ServerRes extends ServerResource {
 			return response;
 		}
 		
+		if(Segm.get(0).equals("mt")){	// ttp://localhost:8080/addToFighting/COD_M/pos
+			String  user = (String) Segm.get(1);
+			jarr = new JSONArray (db.mt(user));
+			
+			
+			return jarr.toString();
+		}
+		
+		if(Segm.get(0).equals("mnt")){	// ttp://localhost:8080/addToFighting/COD_M/pos
+			String  user = (String) Segm.get(1);
+			jarr = new JSONArray (db.mnt(user));
+			
+			
+			return jarr.toString();
+		}
+		
 		response = "Operazioni possibili: \n";
 		response += "Utenti esistenti: 			http://localhost:8080/User \n";
 		response += "Login: 					http://localhost:8080/Login/ID/PW \n";
