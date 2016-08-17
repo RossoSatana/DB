@@ -29,7 +29,7 @@ public class SQLAccess {
 
 			connect = DriverManager
 					.getConnection("jdbc:mysql://localhost:3306/DBTESI?characterEncoding=UTF-8&useSSL=false",
-							"root", "moonlight3");
+							"root", "root");
 			/*.getConnection("jdbc:mysql://localhost:3306/dbtesi?characterEncoding=UTF-8&useSSL=false",
 												"root", "root"); */
 		} catch (Exception e) {
@@ -816,7 +816,17 @@ public class SQLAccess {
 		if (checkStatus(COD_MA).equalsIgnoreCase("dead"))
 			return "{\"Error\": \"There's no point attacking a dead target\"}";
 		
-		if(findRange(COD_M) < (findPosition(COD_MA) / 3))				//controllo che l'attaccante riesca a raggiungere il bersaglio (ATTKRANGE)
+		int i, position = findPosition(COD_MA);
+		
+		for( i=1; i<3 ;i++){
+			if(findCod(position - 3*i, findOwner(COD_MA))==-1  && position - 3*i > 0)
+				position=position-3;
+		
+			if(checkStatus(findCod(position - 3*i, findOwner(COD_MA))).equalsIgnoreCase("dead"))
+				position=position-3;
+		}
+		
+		if(findRange(COD_M) < position/3)				//controllo che l'attaccante riesca a raggiungere il bersaglio (ATTKRANGE)
 			return "{\"Error\": \"Not enought attack range\"}"; 
 
 		mAction(COD_M,  "attack");
