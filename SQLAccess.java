@@ -29,7 +29,7 @@ public class SQLAccess {
 
 			connect = DriverManager
 					.getConnection("jdbc:mysql://localhost:3306/DBTESI?characterEncoding=UTF-8&useSSL=false",
-							"root", "moonlight3");
+							"root", "root");
 			/*.getConnection("jdbc:mysql://localhost:3306/dbtesi?characterEncoding=UTF-8&useSSL=false",
 												"root", "root"); */
 		} catch (Exception e) {
@@ -1223,4 +1223,49 @@ public class SQLAccess {
 		resultSet.next();
 		return resultSet.getString("ID1");
 	}
+	
+	
+	public String mt (String user) throws SQLException { 
+		statement = connect.createStatement();
+		
+		resultSet = statement.executeQuery(""
+				+ "select cl.AD*LVL + m.AD as 'ADL', cl.AP*LVL+m.AP as 'APL', cl.DEF*LVL + m.DEF as 'DEFL', cl.MDEF*LVL + m.MDEF as 'MDEFL', cl.HP*LVL + m.HP as 'HPL', m.DENOMINATION, ATTKRANGE, m.CLASS, TYPE,  NAME, LVL, EXP, mo.COD_M"   
+				+ " from monster_owned mo, monster m, classes cl"
+				+ " where mo.denomination = m.denomination"
+				+ " and m.class = cl.class"
+				+ " and mo.ID_OWNER = '" + user + "' "
+				+ " and mo.COD_M = ANY ( select cod_m" 
+								+	" from team tm"
+								+	" )"
+				+ " group by mo.COD_M");
+
+		String response;
+		response = toJArr(resultSet);
+
+		return response; 
+	}
+	
+	
+
+	public String mnt (String user) throws SQLException { 
+		statement = connect.createStatement();
+
+		resultSet = statement.executeQuery(""
+				+ "select cl.AD*LVL + m.AD as 'ADL', cl.AP*LVL+m.AP as 'APL', cl.DEF*LVL + m.DEF as 'DEFL', cl.MDEF*LVL + m.MDEF as 'MDEFL', cl.HP*LVL + m.HP as 'HPL', m.DENOMINATION, ATTKRANGE, m.CLASS, TYPE,  NAME, LVL, EXP, mo.COD_M"   
+				+ " from monster_owned mo, monster m, classes cl"
+				+ " where mo.DENOMINATION = m.DENOMINATION"
+				+ " and m.CLASS = cl.CLASS"
+				+ " and mo.ID_OWNER = '" + user + "' "
+				+ " and mo.COD_M not in ( select COD_M" 
+								+	" from team tm"
+								+	" )"
+				+ " group by mo.COD_M");
+
+		String response;
+		response = toJArr(resultSet);
+
+		return response; 
+	}
+	
+	
 } 
